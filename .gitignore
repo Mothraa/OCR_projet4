@@ -20,9 +20,11 @@ __pycache__/
 .result/
 .output/
 output/
+log/
+.log/
 
-# ignore all .csv files
-*.csv
+# ignore all log files
+*.log
 
 # tests
 .coverage/
