@@ -6,7 +6,7 @@ class Tournament:
 
     def __init__(self,  **kwargs):
 
-        self._id = self.__create_id()
+        self.id = self.__create_id()
         self.name = kwargs.get("name")
         self.location = None
         self.status = None
@@ -52,7 +52,7 @@ class Player:
         # for key, value in kwargs.items():
         #     setattr(self, key, value)
 
-        self._id = self.__create_id()
+        self.id = self.__create_id()
         self.national_chess_id = kwargs.get("national_chess_id")
         self.first_name = kwargs.get("first_name")
         self.last_name = kwargs.get("last_name")
@@ -69,7 +69,7 @@ class Player:
         return Player.player_repertory  # print(Player.player_repertory)
 
     def __repr__(self) -> str:
-        return "id={}: {} {}".format(self._id, self.first_name, self.last_name)
+        return "id={}: {} {}".format(self.id, self.first_name, self.last_name)
 
     def encode(self):
         return self.__dict__

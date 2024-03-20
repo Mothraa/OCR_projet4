@@ -34,7 +34,8 @@ class Creator:
 
     @staticmethod
     def score(player1, player2):
-        tirage = random.choice(['first', 'second', 'equal'])
+        # scores randomisés et pondérés
+        tirage = random.choices(['first', 'second', 'equal'], weights=(35, 35, 25))[0]
         if tirage == 'equal':
             score_player1 = 0.5
             score_player2 = 0.5
