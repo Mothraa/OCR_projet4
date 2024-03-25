@@ -12,7 +12,7 @@ class Tournament:
         self.status = None
         self.start_date = kwargs.get("start_date")
         self.end_date = kwargs.get("end_date")
-        self.description = ""
+        self.description = None
         self.number_of_rounds = self.default_rounds(kwargs.get("number_of_rounds"))
         self.current_round_number = None
         self.rounds_list = []
@@ -32,7 +32,7 @@ class Tournament:
         return rounds
 
     def __repr__(self) -> str:
-        return "{} : {} / dates : {} to {}".format(self._id, self.name, self.start_date, self.end_date)
+        return "{} : {} / dates : {} to {}".format(self.id, self.name, self.start_date, self.end_date)
 
 
 class Round:

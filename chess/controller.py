@@ -49,7 +49,6 @@ class Controller():
         # on génère l'ensemble des matchs
         self.manage_tournament.manage_round.create_matchs(tournoi1)
 
-
         pass
 
     @staticmethod
@@ -153,6 +152,7 @@ class RoundManagement():
             # ensuite on prend suivant l'ordre du classement
                 player1 = actual_round_list.pop(0)
                 player2 = actual_round_list.pop(0)
+            #TODO : Lors de la génération des paires, évitez de créer des matchs identiques
 
             # génération d'un score aléatoire
             result_match = self.match_add_scores(player1, player2)
