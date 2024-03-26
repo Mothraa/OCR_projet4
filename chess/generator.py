@@ -1,5 +1,7 @@
 import random
 import string
+from datetime import datetime, timedelta
+
 
 from faker import Faker
 from . import model
@@ -9,22 +11,46 @@ class Creator:
         self.fake = Faker(locale="fr_FR")
 
     def player(self, player_number: int):
-        playerlist = []
-        for i in range(player_number):
+        player_list = []
+        for player in range(player_number):
+            # appeler PlayerManagement plutot que le model
             player = model.Player(first_name=self.fake.unique.first_name(),
                                   last_name=self.fake.unique.last_name(),
                                   birthdate=self.fake.unique.date_of_birth(minimum_age=6, maximum_age=99),
                                   national_chess_id=self.fake.unique.bothify(text="??%%%%%").upper(),
                                   )
-            playerlist.append(player)
-            i += 1
-        return playerlist
+            player_list.append(player)
+        return player_list
 
-    def tournament(self):
-        #date_between_dates / date_time_between / future_datetime
+    def tournament(self, tournaments_number: int):
 
-        print(self.fake.unique.address())  # city()
-        pass
+        DELTA_DATE = 3  # nombre de jours max entre début et fin d'un tournoi
+
+        # on génère arbitrairement des dates de tournois sur une année
+        list_date = []
+        for _ in range(tournaments_number):
+            list_date.append(self.fake.unique.date_this_year(before_today=False, after_today=True))
+        list_date.sort()
+
+        # génération des tournois avec attributs
+        tournament_list = []
+
+        for date_debut in list_date:
+            location = self.fake.unique.city()
+            date_fin = date_debut + timedelta(days=DELTA_DATE)
+            # appeler TournamentManagement plutot que le model
+            tournament = model.Tournament(name="Tournoi de {}".format(location),
+                                          location=location,
+                                          start_date=date_debut,
+                                          end_date=self.fake.date_time_between(start_date=date_debut,
+                                                                               end_date=date_fin
+                                                                               ),
+                                          number_of_rounds=random.randint(4, 8),
+                                          description="Organisé par {}".format(self.fake.unique.name_nonbinary()),
+                                          )
+            tournament_list.append(tournament)
+
+        return tournament_list
 
     def round(self):
         pass

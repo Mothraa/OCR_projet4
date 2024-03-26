@@ -1,14 +1,23 @@
 import random
 from datetime import date
 from operator import itemgetter
+import logging
 
 from chess.model import Player, Tournament, Round
 from chess.generator import Creator
 
 class Controller():
     def __init__(self) -> None:
+        # logging a passer en singleton pour pouvoir l'appeler partout ?
+        logging.basicConfig(level=logging.DEBUG,
+                            filename="chess.log",
+                            filemode="a",  # "a"
+                            format='%(asctime)s - %(levelname)s : %(message)s')  # WARNING
+
+# # #    logging.warning("whoaa!")
         self.manage_player = PlayerManagement()
         self.manage_tournament = TournamentManagement()
+
 
 
     def run(self):
@@ -38,16 +47,17 @@ class Controller():
                                             national_chess_id="MM456",
                                             )
 
-        # génération aléatoire de joueurs TODO : passer Creator en tant que décorateur
-        createur = Creator()
-        player_list = createur.player(10)
+        # # génération aléatoire de joueurs TODO : passer Creator en tant que décorateur
 
-        # on ajoute les joueurs au tournoi
-        for player in player_list:
-            self.manage_tournament.add_player(tournoi1, player)
 
-        # on génère l'ensemble des matchs
-        self.manage_tournament.manage_round.create_matchs(tournoi1)
+        # player_list = self.createur.player(10)
+
+        # # on ajoute les joueurs au tournoi
+        # for player in player_list:
+        #     self.manage_tournament.add_player(tournoi1, player)
+
+        # # on génère l'ensemble des matchs
+        # self.manage_tournament.manage_round.create_matchs(tournoi1)
 
         pass
 
@@ -57,7 +67,7 @@ class Controller():
             date.fromisoformat(date_str)
             # datetime.strptime()
         except ValueError:
-            raise ValueError("Format de date incorrect, doit être sous la forme : YYYY-MM-DD")
+            raise ValueError("Format de date incorrect, doit être sous la forme : AAAA-MM-JJ")
         return date(date_str)
 
 
@@ -67,6 +77,7 @@ class PlayerManagement():
 
     def create(self, **kwargs):
         player = Player(**kwargs)
+        logging.info("création du joueur >> " + str(player))
         return player
 
     @staticmethod
@@ -88,7 +99,7 @@ class TournamentManagement():
         self.manage_round = RoundManagement()
         pass
 
-    def create(self, **kwargs):
+    def create(self, **kwargs) -> Tournament:
         tournament = Tournament(**kwargs)
         self.__create_round(tournament, tournament.number_of_rounds)
         return tournament
