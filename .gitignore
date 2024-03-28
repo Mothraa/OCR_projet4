@@ -29,3 +29,5 @@ log/
 # tests
 .coverage/
 htmlcov/
+.pytest_cache/
+assets/
