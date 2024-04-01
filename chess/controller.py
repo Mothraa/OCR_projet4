@@ -67,16 +67,16 @@ class InputManagement():
 
     # TODO : passer les verifs sur la classe InputManagement ou design pattern command ?
     @staticmethod
-    def check_input(input_str: str, *args: type):
+    def check_input(input_str: str, input_type):
         check = False
         try:
-            for input_type in args:
-                if input_type == str and isinstance(input_str, str):
-                    check = True
-                elif input_type == int and isinstance(int(input_str), int):
-                    check = True
-                elif input_type == date and date.fromisoformat(input_str):
-                    check = True
+#            for input_type in args:
+            if input_type == str and isinstance(input_str, str):
+                check = True
+            elif input_type == int and isinstance(int(input_str), int):
+                check = True
+            elif input_type == date and date.fromisoformat(input_str):
+                check = True
                 # TODO : ajouter le cas None
                 # TODO : si plusieurs cas, le None l'emporte
                 # elif (input_type is None) and (input_str == ""):
@@ -86,7 +86,6 @@ class InputManagement():
             #     print("Format incorrect")
         except Exception as e:
             print(e)
-        
         return check
 
     @staticmethod
@@ -127,12 +126,13 @@ class PlayerManagement():
 
 class TournamentManagement():
     def __init__(self) -> None:
+        self.tournament_list = []
         self.manage_round = RoundManagement()
-        pass
 
     def create(self, **kwargs) -> Tournament:
         tournament = Tournament(**kwargs)
         self.__create_round(tournament, tournament.number_of_rounds)
+        self.tournament_list.append(tournament)
         return tournament
 
     @staticmethod

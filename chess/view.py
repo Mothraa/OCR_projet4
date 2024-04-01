@@ -1,4 +1,5 @@
 import logging
+from typing import cast
 
 from datetime import date
 
@@ -90,15 +91,18 @@ class View:
         args[choix - 1]()
 
     @staticmethod
-    def get_input(input_message: str, *args: type) -> any:
+    def get_input(input_message: str, input_type: type) -> any:
         while True:
             input_value = input(input_message)
-            if InputManagement.check_input(input_value, *args):
-                # TODO a refactoriser
-                for input_type in args:
-                    if isinstance(int(input_value), int):
-                        input_value = int(input_value)
-                return input_value
+            if InputManagement.check_input(input_value, input_type):
+                # TODO a refactoriser pour intégrer plusieurs types possibles (None)
+                if input_type == str:
+                    result = str(input_value)
+                elif input_type == date:
+                    result = date.fromisoformat(input_value)
+                elif input_type == int:
+                    result = int(input_value)
+                return result
 
     def menu_player(self):
         View.menu_format("Menu joueurs", type='title')
@@ -141,22 +145,24 @@ class View:
         print("Génération des joueurs : " + str(Player.get_player_repertory()))
         # on retourne sur le menu précédent
         self.menu_player()
-
+ 
     def tournament_create(self):
         View.menu_format("Création d'un tournoi", type='title')
         name = View.get_input("Nom du tournoi :", str)
         location = View.get_input("lieu :", str)
         start_date = View.get_input("date début (format AAA/MM/JJ) :", date)
         end_date = View.get_input("date fin (format AAA/MM/JJ) :", date)
+        # TODO ajouter le None
         number_of_rounds = View.get_input("Nombre tours (4 par défaut) :", int)  # type(None))
         description = View.get_input("Description :", str)
-        tournoi = self.controller.manage_tournament.create(name=name,
-                                                           location=location,
-                                                           start_date=start_date,
-                                                           end_date=end_date,
-                                                           number_of_rounds=number_of_rounds,
-                                                           description=description,
-                                                           )
+        # tournoi = self.controller.manage_tournament.create(name=name,
+        self.controller.manage_tournament.create(name=name,
+                                                 location=location,
+                                                 start_date=start_date,
+                                                 end_date=end_date,
+                                                 number_of_rounds=number_of_rounds,
+                                                 description=description,
+                                                 )
         # on retourne sur le menu précédent
         self.menu_tournament()
 
@@ -215,7 +221,7 @@ class View:
     def tournament_play(self):
         View.menu_format("Informations sur un tournoi",
                          "Démarrer un tournoi",
-                         "Démarrer un nouveau round",
+                         "Commencer un tours",
                          "Terminer un round",
                          # "Ajouter un round",
                          "Retour au menu principal",
@@ -239,18 +245,31 @@ class View:
         self.tournament_play()
 
     def tournament_start(self):
-        pass
+        View.menu_format("Commencer un tournoi", type='title')
+        tournament_id = View.get_input("ID du tournoi :", int) - 1  # TODO revoir les index pour éviter le -1 ?
+        # instancier le tournoi
+        # 
+        # ajouter une date/heure de début du tournoi
+        # ajouter statut début tournoi
+
+        self.tournament_play()
 
     def tournament_start_round(self):
-        # saisie de l'id du tournoi par l'utilisateur
+        View.menu_format("Commencer un Tours", type='title')
+        tournament_id = View.get_input("ID du tournoi :", int) - 1  # TODO revoir les index pour éviter le -1 ?
+        # vérifier si le tournoi est ouvert
+        # demander confirmation a l'utilisateur création round x
         # créer le round
         # ajouter une date/heure de début
         # mettre à jour le round courant dans le tournoi
         # générer les couples
 
-
     def tournament_end_round(self):
-        # saisie de l'id du tournoi par l'utilisateur
+        View.menu_format("Terminer un Tours", type='title')
+        tournament_id = View.get_input("ID du tournoi :", int) - 1  # TODO revoir les index pour éviter le -1 ?
+        # vérifier si le tournoi est ouvert
+        # vérifier si un round à été commencé
         # récupérer l'info du round courant dans le model tournament
+        # demander confirmation a l'utilisateur cloture round x
         # ajouter date/heure de fin
         # ajouter les scores par l'utilisateur
