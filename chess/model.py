@@ -8,11 +8,11 @@ class Tournament:
 
         self.id = self.__create_id()
         self.name = kwargs.get("name")
-        self.location = None
+        self.location = kwargs.get("location")
         self.status = None
         self.start_date = kwargs.get("start_date")
         self.end_date = kwargs.get("end_date")
-        self.description = None
+        self.description = kwargs.get("description")
         self.number_of_rounds = self.default_rounds(kwargs.get("number_of_rounds"))
         self.current_round_number = None
         self.rounds_list = []
@@ -28,11 +28,15 @@ class Tournament:
         if not number_of_rounds:
             rounds = self.DEFAULT_ROUND_NUMBER
         else:
-            rounds = int(number_of_rounds)
+            rounds = number_of_rounds
         return rounds
 
+    @staticmethod
+    def get_tournament_repertory():
+        return Tournament.tournament_repertory  # print(Player.player_repertory)
+
     def __repr__(self) -> str:
-        return "{} : {} / dates : {} to {}".format(self.id, self.name, self.start_date, self.end_date)
+        return "{} : {} - date : {}".format(self.id, self.name, self.start_date)
 
 
 class Round:
@@ -66,7 +70,7 @@ class Player:
 
     @staticmethod
     def get_player_repertory():
-        return Player.player_repertory  # print(Player.player_repertory)
+        return Player.player_repertory
 
     def __repr__(self) -> str:
         return "id={}: {} {}".format(self.id, self.first_name, self.last_name)

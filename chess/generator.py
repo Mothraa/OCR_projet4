@@ -1,19 +1,21 @@
 import random
-import string
-from datetime import datetime, timedelta
+# import string
+from datetime import timedelta
 
 
 from faker import Faker
 from . import model
+
 
 class Creator:
     def __init__(self) -> None:
         self.fake = Faker(locale="fr_FR")
 
     def player(self, player_number: int):
+        # TODO verifier que player_number est positif
         player_list = []
         for player in range(player_number):
-            # appeler PlayerManagement plutot que le model
+            # TODO appeler PlayerManagement plutot que le model
             player = model.Player(first_name=self.fake.unique.first_name(),
                                   last_name=self.fake.unique.last_name(),
                                   birthdate=self.fake.unique.date_of_birth(minimum_age=6, maximum_age=99),
@@ -82,3 +84,4 @@ class Creator:
 # #     print(type(toto))
 # #     save = SaveAsJSON()
 # #     save.player(toto)
+
