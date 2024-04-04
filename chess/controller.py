@@ -2,12 +2,18 @@ import random
 from datetime import date
 from operator import itemgetter
 import logging
-
+from chess.view import MainView, PlayerView, TournamentView
 from chess.model import Player, Tournament, Round
-from chess.generator import Creator
+from chess.service import (
+                        GeneratePlayerService,
+                        # GenerateTournamentService,
+                        # GenerateRoundService,
+                        )
 
 
-class Controller():
+class MainController():
+    view = None
+
     def __init__(self) -> None:
         # logging a passer en singleton pour pouvoir l'appeler partout ?
         logging.basicConfig(level=logging.DEBUG,
@@ -17,122 +23,142 @@ class Controller():
         # pour eviter que faker nous spam de logs
         logging.getLogger('faker').setLevel(logging.ERROR)
 
-# # #    logging.warning("whoaa!")
-        self.manage_player = PlayerManagement()
-        self.manage_tournament = TournamentManagement()
+        self.view = MainView()
+        command = self.view.get_user_choice()
+        self.main_menu_select(command)
 
-    def run(self):
-        pass
-        # afficher le menu principal
+        # logging.warning("whoaa!")
 
-        # tournoi1 = self.manage_tournament.create(name="Tournoi en arène",
-        #                                          start_date="2054-01-01",
-        #                                          end_date="2054-05-01",
-        #                                          number_of_rounds="6",
-        #                                          )
+        # self.manage_player = PlayerManagement()
+        # self.manage_tournament = TournamentManagement()
 
-        # tournoi2 = self.manage_tournament.create(
-        #                                         name="Tournoi sur pilotis",
-        #                                         start_date="2054-04-02",
-        #                                         end_date="2054-08-02",
-        #                                         )
-
-        # player1 = self.manage_player.create(first_name="Jon",
-        #                                     last_name="Jon",
-        #                                     birthdate="1990-01-01",
-        #                                     national_chess_id="JJ123",
-        #                                     )
-
-        # player2 = self.manage_player.create(first_name="Michel",
-        #                                     last_name="Michel",
-        #                                     birthdate="1988-05-15",
-        #                                     national_chess_id="MM456",
-        #                                     )
-
-        # # génération aléatoire de joueurs TODO : passer Creator en tant que décorateur
-
-        # player_list = self.createur.player(10)
-
-        # # on ajoute les joueurs au tournoi
-        # for player in player_list:
-        #     self.manage_tournament.add_player(tournoi1, player)
-
-        # # on génère l'ensemble des matchs
-        # self.manage_tournament.manage_round.create_matchs(tournoi1)
+    def main_menu_select(self, command):
+        if command.choice == 1:  # MainOption.PLAYER_MENU_OPTION:
+            #controller = PlayerController()
+            PlayerController()
+        elif command.choice == 2:  # MainOption.TOURNAMENT_MENU_OPTION:
+            TournamentController()
+        elif command.choice == 3:  # MainOption.CLOSE_PROGRAM_OPTION:
+            # ajouter message de départ
+            pass
 
 
-class InputManagement():
-    def __init__():
-        pass
+class PlayerController():
+    view = None
+    generateur = None
 
-    # TODO : passer les verifs sur la classe InputManagement ou design pattern command ?
-    @staticmethod
-    def check_input(input_str: str, input_type):
-        check = False
-        try:
-#            for input_type in args:
-            if input_type == str and isinstance(input_str, str):
-                check = True
-            elif input_type == int and isinstance(int(input_str), int):
-                check = True
-            elif input_type == date and date.fromisoformat(input_str):
-                check = True
-                # TODO : ajouter le cas None
-                # TODO : si plusieurs cas, le None l'emporte
-                # elif (input_type is None) and (input_str == ""):
-                # elif (input_type is type(None)) and (input_str == ""):
-                #     check = True
-            # except ValueError:
-            #     print("Format incorrect")
-        except Exception as e:
-            print(e)
-        return check
-
-    @staticmethod
-    def check_dates(self, start_date, end_date):
-        """vérification :
-            - du format date
-            - que la date de début est avant la date de fin
-            - que les dates sont à venir
-        """
-        pass
-
-    @staticmethod
-    def check_chess_id(self):
-        pass
-
-
-class PlayerManagement():
     def __init__(self) -> None:
-        pass
+        self.view = PlayerView()
+        self.player_menu()
 
-    def create(self, **kwargs):
-        player = Player(**kwargs)
+    def player_menu(self):
+        self.view.player_menu()
+        command = self.view.get_user_choice()
+        self.player_menu_select(command)
+
+    def player_menu_select(self, command):
+        if command.choice == 1:
+            self.display_players()
+        elif command.choice == 2:
+            self.player_create_menu()
+        elif command.choice == 3:
+            self.players_generate_menu()
+        elif command.choice == 4:
+            MainController()
+
+    def display_players(self):
+        # TODO Player a instancier ?
+        players = Player.get_players_repertory()
+        self.view.display_players(players)
+        # on retourne au menu
+        self.player_menu()
+
+    def player_create_menu(self):
+        command = self.view.player_create_menu()
+        self.player_create(command)
+        # on retourne au menu
+        self.player_menu()
+
+    def player_create(self, command):
+        player = Player(command)
         logging.info("création du joueur >> " + str(player))
         return player
+
+    def players_generate_menu(self):
+        command = self.view.player_generate_menu()
+        self.generateur = GeneratePlayerService()
+        player_list = []
+
+        for player in range(command.choice):
+            command_player = self.generateur.generate_player_all_attrs()
+            player = self.player_create(command_player)
+        #     player_list.append(player)
+        # return player_list
+        # self.generateur.add_players_all_attrs(command)
+        # on retourne au menu
+        self.player_menu()
 
     @staticmethod
     def get_player_by_id(player_id: int) -> Player:
         return Player.player_repertory[player_id]
 
     @staticmethod
-    def add_tournament(player: Player, tournament: Tournament):
+    def add_tournament_history(player: Player, tournament: Tournament):
         player.tournaments_history.append(tournament)
 
     @staticmethod
-    def add_match(player: Player, opponent: Player, result: enumerate):
+    def add_match_history(player: Player, opponent: Player, result: enumerate):
         pass
+
+
+class TournamentController():
+    view = None
+
+    def __init__(self) -> None:
+        self.view = TournamentView()
+        self.tournament_menu()
+
+    def tournament_menu(self):
+        self.view.tournament_menu()
+        command = self.view.get_user_choice()
+        self.tournament_menu_select(command)
+
+    def tournament_menu_select(self, command):
+        if command.choice == 1:
+            self.display_tournaments()
+        elif command.choice == 2:
+            self.tournament_menu_create()
+        elif command.choice == 3:
+            self.tournament_menu_generate()
+        elif command.choice == 4:
+            self.tournament_menu_start()
+        elif command.choice == 5:
+            self.tournament_menu_continue()
+        elif command.choice == 6:
+            MainController()
+
+    def display_tournaments(self):
+        pass
+
+    def tournament_menu_create(self):
+        command = self.view.tournament_create_menu()
+        self.tournament_create(command)
+        # on retourne au menu
+        self.tournament_menu()
+
+    def tournament_create(self, command):
+        tournament = Tournament(command)
+        logging.info("création d'un tournoi >> " + str(tournament))
+        return tournament
 
 
 class TournamentManagement():
     def __init__(self) -> None:
-        self.tournament_list = []
         self.manage_round = RoundManagement()
 
     def create(self, **kwargs) -> Tournament:
         tournament = Tournament(**kwargs)
         self.__create_round(tournament, tournament.number_of_rounds)
-        self.tournament_list.append(tournament)
         return tournament
 
     @staticmethod
@@ -162,10 +188,25 @@ class TournamentManagement():
     def __add_round(self, tournament: Tournament, round: Round):
         tournament.rounds_list.append(round)
 
+class RoundController():
+    view = None
 
-class RoundManagement():
-    def __init__(self) -> None:
-        pass
+    def __init__(self):
+      pass
+  #  self.view = view
+  
+  # def generate_round(self, command):
+  #  tournament = Tournament.find_by_code(command.getTournamentCode())
+  #  players = Player.find_by_tournaments(tournament)
+  #  games = GenerateRoundUseCase().generate(tournament, players)
+  #  Round.create(tournament, games)
+  #  print("Le tournoi a bien été ajouté")
+
+    def generate_round(self, command):
+    # command = self.view.generate_round_menu()
+    # games = GenerateRoundUseCase().generate(tournament, players)
+        print("Le tour a bien été ajouté")
+
 
     def create(self, **kwargs):
         round = Round(**kwargs)
@@ -221,8 +262,7 @@ class RoundManagement():
     def check_number_of_players():
         pass
 
-
-class MatchManagement():
+class MatchController():
     def __init__(self) -> None:
         pass
 
