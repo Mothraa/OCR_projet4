@@ -1,6 +1,6 @@
 from datetime import date
 
-from chess.model import Player
+from chess.model import Player, Tournament, TournamentStatus
 
 # TODO : a dispatch dans les classes des commands
 class InputManagement():
@@ -34,7 +34,7 @@ class MainMenuCommand:
         if self.choice is None:
             raise ValueError("Merci d'indiquer un choix")
         elif not isinstance(int(self.choice), int) or int(self.choice) < 1 or int(self.choice) > self.NB_CHOIX_MAX:
-            raise ValueError("Merci d'indiquer un nombre entre 1 et 3")
+            raise ValueError(f"Merci d'indiquer un nombre entre 1 et {self.NB_CHOIX_MAX}")
 
     def clean_up(self):
         self.choice = int(self.choice)
@@ -54,7 +54,7 @@ class PlayerMenuCommand:
         if self.choice is None:
             raise ValueError("Merci d'indiquer un choix")
         elif not isinstance(int(self.choice), int) or int(self.choice) < 1 or int(self.choice) > self.NB_CHOIX_MAX:
-            raise ValueError("Merci d'indiquer un nombre entre 1 et 3")
+            raise ValueError(f"Merci d'indiquer un nombre entre 1 et {self.NB_CHOIX_MAX}")
 
     def clean_up(self):
         self.choice = int(self.choice)
@@ -108,7 +108,7 @@ class PlayerGenerateCommand:
 
 class TournamentMenuCommand:
     choice = None
-    NB_CHOIX_MAX = 6
+    NB_CHOIX_MAX = 8
 
     def __init__(self, choice):
         # faire hériter de MainMenuCommand ?
@@ -121,14 +121,31 @@ class TournamentMenuCommand:
         if self.choice is None:
             raise ValueError("Merci d'indiquer un choix")
         elif not isinstance(int(self.choice), int) or int(self.choice) < 1 or int(self.choice) > self.NB_CHOIX_MAX:
-            raise ValueError("Merci d'indiquer un nombre entre 1 et 3")
+            raise ValueError(f"Merci d'indiquer un nombre entre 1 et {self.NB_CHOIX_MAX}")
+
+    def clean_up(self):
+        self.choice = int(self.choice)
+
+
+class TournamentDetailCommand:
+    choice = None
+
+    def __init__(self, choice):
+        self.choice = choice
+        self.self_validate()
+        self.clean_up()
+
+    def self_validate(self):
+        if self.choice is None:
+            raise ValueError("Merci d'indiquer un nombre")
+        elif not isinstance(int(self.choice), int) or int(self.choice) < 0:
+            raise ValueError("Merci d'indiquer un nombre entier positif")
 
     def clean_up(self):
         self.choice = int(self.choice)
 
 
 class TournamentCreateCommand:
-
     DEFAULT_ROUND_NUMBER = 4
 
     name = None
@@ -187,26 +204,78 @@ class TournamentGenerateCommand:
         self.choice = int(self.choice)
 
 
+class TournamentAddPlayerCommand:
+    """Commande qui attend l'ID d'un tournoi (en int)"""
+    choice = None
+
+    def __init__(self, choice):
+        self.choice = choice
+        self.self_validate()
+        self.clean_up()
+        self.check_tournament_status()
+
+    def self_validate(self):
+        if self.choice is None:
+            raise ValueError("Merci d'indiquer un nombre")
+        elif not isinstance(int(self.choice), int) or int(self.choice) < 0:
+            raise ValueError("Merci d'indiquer un nombre entier positif")
+
+    def clean_up(self):
+        self.choice = int(self.choice)
+
+    def check_tournament_status(self):
+        tournament = Tournament.get_tournament_from_id(self.choice)
+        # on vérifie que le statut du tournoi soit au statut CREATED
+        if tournament.get_status() is TournamentStatus.CREATED:
+            raise ValueError(f"Le tournoi ne peut être commencé, son statut est {tournament.status}")
 
 
-# exemple
-# class GenerateRoundCommand:
-#     tournament_code = None
+class PlayersToAddInTournamentCommand:
+    players_id_list = []
 
-#     def __init__(self, tournament_code):
-#         self.tounament_code = tournament_code
+    def __init__(self, input_players_list):
+        self.input_players_list = input_players_list
+        self.self_validate()
+        self.clean_up()
 
-#         self.self_validate()
+    def self_validate(self):
+        # on sépare la chaine de caractère
+        id_list = self.input_players_list.strip().split(sep=" ")
+        # on transforme chaque ID en int
+        id_list = [int(player_id) for player_id in id_list]
+        # on vérifie qui les ID indiqués existent
+        [Player.get_player_from_id(player_id) for player_id in id_list]
 
-#     def self_validate(self):
-#         if self.tournament_code is None:
-#         # raise ValueError("Tournament code is required")
-#         self.tournament_code = 'A'
-  
-#     def clean_up(self):
-#         # valeurs par défaut
-#         if self.code is None:
-#         self.code = 'A'
+    def clean_up(self):
+        id_list = self.input_players_list.strip().split(sep=" ")
+        self.players_id_list = [int(player_id) for player_id in id_list]
+
+
+class TournamentStartCommand:
+    choice = None
+
+    def __init__(self, choice):
+        self.choice = choice
+        self.self_validate()
+        self.clean_up()
+        self.check_tournament_status()
+
+    def self_validate(self):
+
+        if self.choice is None:
+            raise ValueError("Merci d'indiquer un nombre")
+        elif not isinstance(int(self.choice), int) or int(self.choice) < 0:
+            raise ValueError("Merci d'indiquer un nombre entier positif")
+
+    def clean_up(self):
+        self.choice = int(self.choice)
+
+    def check_tournament_status(self):
+        tournament = Tournament.get_tournament_from_id(self.choice)
+        # on vérifie que le statut du tournoi soit au statut CREATED
+        if tournament.get_status() != TournamentStatus.CREATED:
+            raise ValueError(f"Le tournoi ne peut être commencé son statut est {tournament.status}")
+
 
 # exemple avec decorateur
     # def validate_input(func):

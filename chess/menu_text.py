@@ -1,9 +1,11 @@
 from enum import Enum
 
+
 class ExtendedEnum(Enum):
     @classmethod
     def list(cls):
         return list(map(lambda c: c.value, cls))
+
 
 class MainOption(ExtendedEnum):
     PLAYER_MENU_OPTION = 1
@@ -18,6 +20,8 @@ MAIN_MENU = """
     2. Gestion Tournois
     3. Quitter
 """
+
+# PLAYERS
 
 PLAYER_MENU = """
     Menu joueurs\n
@@ -34,15 +38,23 @@ PLAYER_GENERATE_MENU = """
     Indiquer le nombre de joueurs à créer :
     """
 
+# TOURNAMENTS
+
 TOURNAMENT_MENU = """
     Menu Tournois\n
-    1. Afficher tournois
-    2. Créer tournoi
-    3. Générer des tournois (POUR TEST)
-    4. Commencer un tournoi
-    5. Poursuivre un tournoi
-    6. Retour au menu principal
+    1. Afficher liste tournois
+    2. Afficher le détail d'un tournoi
+    3. Créer tournoi
+    4. Générer des tournois (POUR TEST)
+    5. Ajouter des joueurs à un tournoi
+    6. Commencer un tournoi
+    7. Poursuivre un tournoi
+    8. Retour au menu principal
 """
+
+TOURNAMENT_DETAIL_MENU = """**** Détails sur un tournoi ****\n
+    Indiquer l'ID du tournoi :
+    """
 
 TOURNAMENT_CREATE_MENU = "**** Création d'un nouveau tournoi ****"
 
@@ -51,6 +63,19 @@ TOURNAMENT_GENERATE_MENU = """
     Indiquer le nombre de tournois à créer :
     """
 
+TOURNAMENT_ADD_PLAYERS_MENU = """
+    **** Ajout de joueurs à un tournoi ****\n
+    Indiquer l'ID du tournoi :
+    """
+
+TOURNAMENT_ADD_PLAYERS_LIST = """
+    Indiquer la liste des ID des joueurs à ajouter (séparés par des espaces) :
+    """
+
+TOURNAMENT_START_MENU = """**** Débuter un tournoi ****\n
+    << Attention >> vous ne pourrez plus ajouter de joueur une fois le tournoi commencé.
+    Indiquer l'ID du tournoi :
+    """
 
 ROUND_MENU = """
   Tours\n

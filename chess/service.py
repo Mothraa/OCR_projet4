@@ -4,7 +4,8 @@ from datetime import timedelta
 
 from faker import Faker
 from . import model
-#from chess.controller import PlayerController
+# from chess.controller import PlayerController
+
 
 class Generator:
     def __init__(self) -> None:
@@ -44,7 +45,7 @@ class GenerateTournamentService(Generator):
         location = self.fake.unique.city()
         date_debut = self.fake.unique.date_this_year(before_today=False, after_today=True)
         date_fin_max = date_debut + timedelta(days=DELTA_DATE)
-        date_fin = self.fake.date_time_between(start_date=date_debut, end_date=date_fin_max)
+        date_fin = self.fake.date_between(start_date=date_debut, end_date=date_fin_max)
 
         self.tournament_attrs.name = "Tournoi de {}".format(location)
         self.tournament_attrs.location = location
@@ -60,7 +61,7 @@ class GenerateTournamentService(Generator):
 # class GenerateRoundService(Generator):
 #     def __init__(self) -> None:
 #         super().__init__()
-    
+
 #     def create_round(self, tournament: Tournament, players: Player[]) -> None:
 #         tournament = Tournament.find_by_code(command.getTournamentCode())
 #         players = Player.find_by_tournaments(tournament)
@@ -100,10 +101,6 @@ class CreatorDeprecated(Generator):
         return ([player1, score_player1], [player2, score_player2])
 
 
-#     creator = Creator()
-#     toto = creator.player(3)
-#     player_liste = Player.get_player_repertory()
-
 class SaveAsJSON:
     def __init__(self):
         pass
@@ -111,6 +108,7 @@ class SaveAsJSON:
 # #     print(type(toto))
 # #     save = SaveAsJSON()
 # #     save.player(toto)
+
 
 class ReadFromJSON:
     def __init__(self):

@@ -5,7 +5,6 @@ from chess.controller import MainController
 class Client():
     def __init__(self):
         controller = MainController()
-        # MainController()
 
 
 if __name__ == "__main__":

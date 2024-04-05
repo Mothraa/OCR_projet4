@@ -31,12 +31,22 @@ class Player:
         Player.players_repertory.append(self)
 
     def __create_id(self):
-        _id = len(Player.players_repertory) + 1
+        _id = len(Player.players_repertory)
         return _id
 
     @staticmethod
     def get_players_repertory():
         return Player.players_repertory
+
+    @staticmethod
+    def get_player_from_id(player_id: int):
+        return Player.players_repertory[player_id]
+
+    # def add_tournament_from(self, tournament: Tournament):
+    #     self.tournaments_history.append(tournament)
+
+    def add_tournament_from_id(self, tournament_id: int):
+        self.tournaments_history.append(Tournament.get_tournament_from_id(tournament_id))
 
     def __repr__(self) -> str:
         return "ID {}: {} {}".format(self.id,
@@ -61,7 +71,7 @@ class Tournament:
     current_round_number = None
     rounds_list = []
     player_list = []
-    tournament_repertory = []
+    tournaments_repertory = []
 
     def __init__(self,  player_data):
 
@@ -74,10 +84,10 @@ class Tournament:
         self.description = player_data.description
         self.number_of_rounds = player_data.number_of_rounds
 
-        Tournament.tournament_repertory.append(self)
+        Tournament.tournaments_repertory.append(self)
 
     def __create_id(self):
-        _id = len(Tournament.tournament_repertory) + 1
+        _id = len(Tournament.tournaments_repertory)
         return _id
 
     # def default_rounds(self, number_of_rounds):
@@ -87,9 +97,24 @@ class Tournament:
     #         rounds = number_of_rounds
     #     return rounds
 
+    def get_status(self) -> TournamentStatus:
+        return self.status
+
+    def change_status(self, new_status: TournamentStatus):
+        if self.get_status() == TournamentStatus.TERMINATED:
+            raise PermissionError("on ne peut modifier le statut d'un tournoi terminé")
+        elif self.get_status() == TournamentStatus.IN_PROGRESS and new_status == TournamentStatus.CREATED:
+            raise PermissionError("on ne peut repasser CREATED, un tournoi IN PROGRESS")
+        else:
+            self.status == new_status
+
     @staticmethod
-    def get_tournament_repertory():
-        return Tournament.tournament_repertory  # print(Player.player_repertory)
+    def get_tournaments_repertory():
+        return Tournament.tournaments_repertory
+
+    @staticmethod
+    def get_tournament_from_id(tournament_id: int):
+        return Tournament.tournaments_repertory[tournament_id]
 
     def __repr__(self) -> str:
         return "ID {} : {} - Du {} au {} - {} tours".format(self.id,

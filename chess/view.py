@@ -11,8 +11,12 @@ from chess.command import (MainMenuCommand,
                            PlayerCreateCommand,
                            PlayerGenerateCommand,
                            TournamentMenuCommand,
+                           TournamentDetailCommand,
                            TournamentCreateCommand,
                            TournamentGenerateCommand,
+                           TournamentAddPlayerCommand,
+                           PlayersToAddInTournamentCommand,
+                           TournamentStartCommand,
                            )
 
 # # exemple de décorateur a généraliser pour get_user_choice()
@@ -32,6 +36,7 @@ from chess.command import (MainMenuCommand,
 #     def get_user_choice(self):
 #         choice = input()
 #         return TournamentMenuCommand(choice)
+
 
 class MainView:
     def __init__(self):
@@ -97,7 +102,7 @@ class TournamentView:
     def tournament_menu(self):
         print(text.TOURNAMENT_MENU)
 
-    def get_user_choice(self):
+    def tournament_menu_user_choice(self):
         while True:
             try:
                 choice = input()
@@ -107,6 +112,18 @@ class TournamentView:
 
     def display_tournaments(self, tournaments_list):
         print(tournaments_list)
+
+    def tournament_details_get_tournament_id(self):
+        print(text.TOURNAMENT_DETAIL_MENU)
+        while True:
+            try:
+                tournament_id = input()
+                return TournamentDetailCommand(tournament_id)
+            except Exception as e:
+                print(e)
+
+    def display_tournament_details(self, text: str):
+        print(text)
 
     def tournament_create_menu(self):
         print(text.TOURNAMENT_CREATE_MENU)
@@ -134,11 +151,41 @@ class TournamentView:
         print(text.TOURNAMENT_GENERATE_MENU)
         while True:
             try:
-                choice = input()
-                return TournamentGenerateCommand(choice)
+                tournament_number = input()
+                return TournamentGenerateCommand(tournament_number)
             except Exception as e:
-                print(e)     
+                print(e)
 
+    def tournament_add_players_get_tournament_id(self):
+        print(text.TOURNAMENT_ADD_PLAYERS_MENU)
+        while True:
+            try:
+                tournament_id = input()
+                return TournamentAddPlayerCommand(tournament_id)
+            except Exception as e:
+                print(e)
+
+    def tournament_add_players_get_players_id(self):
+        print(text.TOURNAMENT_ADD_PLAYERS_LIST)
+        while True:
+            try:
+                players_id = input()
+                return PlayersToAddInTournamentCommand(players_id)
+            except Exception as e:
+                print(e)
+
+    def tournament_add_players_display(self):
+        #TODO
+        pass
+
+    def tournament_menu_start(self):
+        print(text.TOURNAMENT_START_MENU)
+        while True:
+            try:
+                choice = input()
+                return TournamentStartCommand(choice)
+            except Exception as e:
+                print(e)
 
 # class RoundView:
 #     def __init__(self):
