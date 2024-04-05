@@ -31,7 +31,7 @@ PLAYER_CREATE_MENU = "**** Création d'un nouveau joueur ****"
 
 PLAYER_GENERATE_MENU = """
     **** Génération aléatoire de joueurs ****\n
-    Indiquer un nombre de joueurs à créer :
+    Indiquer le nombre de joueurs à créer :
     """
 
 TOURNAMENT_MENU = """
@@ -45,6 +45,12 @@ TOURNAMENT_MENU = """
 """
 
 TOURNAMENT_CREATE_MENU = "**** Création d'un nouveau tournoi ****"
+
+TOURNAMENT_GENERATE_MENU = """
+    **** Génération aléatoire de tournois ****\n
+    Indiquer le nombre de tournois à créer :
+    """
+
 
 ROUND_MENU = """
   Tours\n

@@ -168,6 +168,27 @@ class TournamentCreateCommand:
         self.end_date = date.fromisoformat(self.end_date)
         self.number_of_rounds = int(self.number_of_rounds)
 
+
+class TournamentGenerateCommand:
+    choice = None
+
+    def __init__(self, choice):
+        self.choice = choice
+        self.self_validate()
+        self.clean_up()
+
+    def self_validate(self):
+        if self.choice is None:
+            raise ValueError("Merci d'indiquer un nombre")
+        elif not isinstance(int(self.choice), int) or int(self.choice) < 0:
+            raise ValueError("Merci d'indiquer un nombre entier positif")
+
+    def clean_up(self):
+        self.choice = int(self.choice)
+
+
+
+
 # exemple
 # class GenerateRoundCommand:
 #     tournament_code = None

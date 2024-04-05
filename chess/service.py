@@ -12,7 +12,7 @@ class Generator:
 
 
 class GeneratePlayerService(Generator):
-    controleur = None
+    # on récupère la structure du joueur
     player_attrs = model.Player
 
     def __init__(self) -> None:
@@ -29,38 +29,31 @@ class GeneratePlayerService(Generator):
 
 
 class GenerateTournamentService(Generator):
+    # on récupère la structure de tournoi
+    tournament_attrs = model.Tournament
+
     def __init__(self) -> None:
         super().__init__()
 
-    def add_tournaments_all_attrs(self, tournaments_number: int) -> list[model.Tournament]:
+    def generate_tournament_all_attrs(self):
 
         DELTA_DATE = 3  # nombre de jours max entre début et fin d'un tournoi
+        NB_ROUND_MIN = 4
+        NB_ROUND_MAX = 8
 
-        # on génère arbitrairement des dates de tournois sur une année
-        list_date = []
-        for _ in range(tournaments_number):
-            list_date.append(self.fake.unique.date_this_year(before_today=False, after_today=True))
-        list_date.sort()
+        location = self.fake.unique.city()
+        date_debut = self.fake.unique.date_this_year(before_today=False, after_today=True)
+        date_fin_max = date_debut + timedelta(days=DELTA_DATE)
+        date_fin = self.fake.date_time_between(start_date=date_debut, end_date=date_fin_max)
 
-        # génération des tournois avec attributs
-        tournament_list = []
+        self.tournament_attrs.name = "Tournoi de {}".format(location)
+        self.tournament_attrs.location = location
+        self.tournament_attrs.start_date = date_debut
+        self.tournament_attrs.end_date = date_fin
+        self.tournament_attrs.number_of_rounds = random.randint(NB_ROUND_MIN, NB_ROUND_MAX)
+        self.tournament_attrs.description = "Organisé par {}".format(self.fake.unique.name_nonbinary())
 
-        for date_debut in list_date:
-            location = self.fake.unique.city()
-            date_fin = date_debut + timedelta(days=DELTA_DATE)
-            # appeler TournamentManagement plutot que le model
-            tournament = model.Tournament(name="Tournoi de {}".format(location),
-                                          location=location,
-                                          start_date=date_debut,
-                                          end_date=self.fake.date_time_between(start_date=date_debut,
-                                                                               end_date=date_fin
-                                                                               ),
-                                          number_of_rounds=random.randint(4, 8),
-                                          description="Organisé par {}".format(self.fake.unique.name_nonbinary()),
-                                          )
-            tournament_list.append(tournament)
-
-        return tournament_list
+        return self.tournament_attrs
 
 
 # Service: Approche 2

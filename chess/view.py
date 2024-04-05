@@ -12,7 +12,7 @@ from chess.command import (MainMenuCommand,
                            PlayerGenerateCommand,
                            TournamentMenuCommand,
                            TournamentCreateCommand,
-                           #TournamentGenerateCommand,
+                           TournamentGenerateCommand,
                            )
 
 # # exemple de décorateur a généraliser pour get_user_choice()
@@ -130,6 +130,14 @@ class TournamentView:
             except Exception as e:
                 print(e)
 
+    def tournament_generate_menu(self):
+        print(text.TOURNAMENT_GENERATE_MENU)
+        while True:
+            try:
+                choice = input()
+                return TournamentGenerateCommand(choice)
+            except Exception as e:
+                print(e)     
 
 
 # class RoundView:

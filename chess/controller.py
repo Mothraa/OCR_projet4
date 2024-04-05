@@ -6,7 +6,7 @@ from chess.view import MainView, PlayerView, TournamentView
 from chess.model import Player, Tournament, Round
 from chess.service import (
                         GeneratePlayerService,
-                        # GenerateTournamentService,
+                        GenerateTournamentService,
                         # GenerateRoundService,
                         )
 
@@ -62,7 +62,7 @@ class PlayerController():
         elif command.choice == 2:
             self.player_create_menu()
         elif command.choice == 3:
-            self.players_generate_menu()
+            self.players_generate()
         elif command.choice == 4:
             MainController()
 
@@ -84,14 +84,13 @@ class PlayerController():
         logging.info("création du joueur >> " + str(player))
         return player
 
-    def players_generate_menu(self):
+    def players_generate(self):
         command = self.view.player_generate_menu()
         self.generateur = GeneratePlayerService()
-        player_list = []
 
-        for player in range(command.choice):
+        for _ in range(command.choice):
             command_player = self.generateur.generate_player_all_attrs()
-            player = self.player_create(command_player)
+            self.player_create(command_player)
         #     player_list.append(player)
         # return player_list
         # self.generateur.add_players_all_attrs(command)
@@ -129,7 +128,7 @@ class TournamentController():
         elif command.choice == 2:
             self.tournament_menu_create()
         elif command.choice == 3:
-            self.tournament_menu_generate()
+            self.tournament_generate()
         elif command.choice == 4:
             self.tournament_menu_start()
         elif command.choice == 5:
@@ -150,6 +149,23 @@ class TournamentController():
         tournament = Tournament(command)
         logging.info("création d'un tournoi >> " + str(tournament))
         return tournament
+
+    def tournament_generate(self):
+        command = self.view.tournament_generate_menu()
+        self.generateur = GenerateTournamentService()
+
+        for _ in range(command.choice):
+            command_tournament = self.generateur.generate_tournament_all_attrs()
+            # trier par date de début avant création ?
+            toto = self.tournament_create(command_tournament)
+            print(toto)
+        self.tournament_menu()
+
+    def tournament_menu_start(self):
+        pass
+
+    def tournament_menu_continue(self):
+        pass
 
 
 class TournamentManagement():
