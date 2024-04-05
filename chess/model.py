@@ -39,7 +39,12 @@ class Player:
         return Player.players_repertory
 
     def __repr__(self) -> str:
-        return "id={}: {} {}".format(self.id, self.first_name, self.last_name)
+        return "id={}: {} {} - {} - {}".format(self.id,
+                                               self.first_name,
+                                               self.last_name,
+                                               self.national_chess_id,
+                                               self.birthdate,
+                                               )
 
     def encode(self):
         return self.__dict__
@@ -89,7 +94,12 @@ class Tournament:
         return Tournament.tournament_repertory  # print(Player.player_repertory)
 
     def __repr__(self) -> str:
-        return "{} : {} - date : {}".format(self.id, self.name, self.start_date)
+        return "ID {} : {} - Du {} au {} - {} tours".format(self.id,
+                                                            self.name,
+                                                            self.start_date,
+                                                            self.end_date,
+                                                            self.number_of_rounds,
+                                                            )
 
 
 class Round:
