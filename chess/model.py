@@ -39,12 +39,10 @@ class Player:
         return Player.players_repertory
 
     def __repr__(self) -> str:
-        return "id={}: {} {} - {} - {}".format(self.id,
-                                               self.first_name,
-                                               self.last_name,
-                                               self.national_chess_id,
-                                               self.birthdate,
-                                               )
+        return "ID {}: {} {}".format(self.id,
+                                     self.first_name,
+                                     self.last_name,
+                                     )
 
     def encode(self):
         return self.__dict__
