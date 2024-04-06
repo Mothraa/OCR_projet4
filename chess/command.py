@@ -224,10 +224,10 @@ class TournamentAddPlayerCommand:
         self.choice = int(self.choice)
 
     def check_tournament_status(self):
-        tournament = Tournament.get_tournament_from_id(self.choice)
+        tournament = Tournament.find_by_id(self.choice)
         # on vérifie que le statut du tournoi soit au statut CREATED
-        if tournament.get_status() is TournamentStatus.CREATED:
-            raise ValueError(f"Le tournoi ne peut être commencé, son statut est {tournament.status}")
+        if tournament.get_status() is not TournamentStatus.CREATED:
+            raise ValueError(f"Impossible d'ajouter des joueurs, son statut est {tournament.status}")
 
 
 class PlayersToAddInTournamentCommand:
@@ -244,7 +244,7 @@ class PlayersToAddInTournamentCommand:
         # on transforme chaque ID en int
         id_list = [int(player_id) for player_id in id_list]
         # on vérifie qui les ID indiqués existent
-        [Player.get_player_from_id(player_id) for player_id in id_list]
+        [Player.find_by_id(player_id) for player_id in id_list]
 
     def clean_up(self):
         id_list = self.input_players_list.strip().split(sep=" ")
@@ -271,10 +271,10 @@ class TournamentStartCommand:
         self.choice = int(self.choice)
 
     def check_tournament_status(self):
-        tournament = Tournament.get_tournament_from_id(self.choice)
+        tournament = Tournament.find_by_id(self.choice)
         # on vérifie que le statut du tournoi soit au statut CREATED
         if tournament.get_status() != TournamentStatus.CREATED:
-            raise ValueError(f"Le tournoi ne peut être commencé son statut est {tournament.status}")
+            raise ValueError(f"Le tournoi ne peut être commencé, son statut est {tournament.status}")
 
 
 # exemple avec decorateur
@@ -285,6 +285,8 @@ class TournamentStartCommand:
     #             raise ValueError(f"Merci d'indiquer {func.__doc__}.")
     #         return value
     #     return wrapper
+
+    # logging.debug("choix menu >> " + str(args[choix - 1]))
 
     # @validate_input
     # def validate_first_name(self):

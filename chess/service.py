@@ -58,9 +58,9 @@ class GenerateTournamentService(Generator):
 
 
 # Service: Approche 2
-# class GenerateRoundService(Generator):
-#     def __init__(self) -> None:
-#         super().__init__()
+class GenerateRoundService(Generator):
+    def __init__(self) -> None:
+        super().__init__()
 
 #     def create_round(self, tournament: Tournament, players: Player[]) -> None:
 #         tournament = Tournament.find_by_code(command.getTournamentCode())

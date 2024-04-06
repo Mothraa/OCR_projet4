@@ -39,14 +39,14 @@ class Player:
         return Player.players_repertory
 
     @staticmethod
-    def get_player_from_id(player_id: int):
+    def find_by_id(player_id: int):
         return Player.players_repertory[player_id]
 
     # def add_tournament_from(self, tournament: Tournament):
     #     self.tournaments_history.append(tournament)
 
-    def add_tournament_from_id(self, tournament_id: int):
-        self.tournaments_history.append(Tournament.get_tournament_from_id(tournament_id))
+    def add_tournament_by_id(self, tournament_id: int):
+        self.tournaments_history.append(Tournament.find_by_id(tournament_id))
 
     def __repr__(self) -> str:
         return "ID {}: {} {}".format(self.id,
@@ -113,7 +113,7 @@ class Tournament:
         return Tournament.tournaments_repertory
 
     @staticmethod
-    def get_tournament_from_id(tournament_id: int):
+    def find_by_id(tournament_id: int):
         return Tournament.tournaments_repertory[tournament_id]
 
     def __repr__(self) -> str:

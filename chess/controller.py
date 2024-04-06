@@ -1,13 +1,13 @@
 import random
-from datetime import date
 from operator import itemgetter
+
 import logging
-from chess.view import MainView, PlayerView, TournamentView
-from chess.model import Player, Tournament, Round
+from chess.view import MainView, PlayerView, TournamentView, RoundView
+from chess.model import Player, Tournament, Round, TournamentStatus
 from chess.service import (
                         GeneratePlayerService,
                         GenerateTournamentService,
-                        # GenerateRoundService,
+                        GenerateRoundService,
                         )
 
 
@@ -18,7 +18,8 @@ class MainController():
         # logging a passer en singleton pour pouvoir l'appeler partout ?
         logging.basicConfig(level=logging.DEBUG,
                             filename="chess.log",
-                            filemode="a",  # "a"
+                            filemode="a",  # "a",
+                            encoding='utf-8',
                             format='%(asctime)s - %(levelname)s : %(message)s')  # WARNING
         # pour eviter que faker nous spam de logs
         logging.getLogger('faker').setLevel(logging.ERROR)
@@ -34,7 +35,6 @@ class MainController():
 
     def main_menu_select(self, command):
         if command.choice == 1:  # MainOption.PLAYER_MENU_OPTION:
-            #controller = PlayerController()
             PlayerController()
         elif command.choice == 2:  # MainOption.TOURNAMENT_MENU_OPTION:
             TournamentController()
@@ -98,46 +98,58 @@ class PlayerController():
         self.player_menu()
 
     @staticmethod
-    def get_player_by_id(player_id: int) -> Player:
-        return Player.player_repertory[player_id]
-
-    @staticmethod
     def add_tournament_history(player: Player, tournament: Tournament):
         player.tournaments_history.append(tournament)
 
     @staticmethod
     def add_match_history(player: Player, opponent: Player, result: enumerate):
+        #TODO
         pass
 
 
 class TournamentController():
     view = None
+    tour = None
 
     def __init__(self) -> None:
         self.view = TournamentView()
+        self.tour = RoundController()
         self.tournament_menu()
 
     def tournament_menu(self):
         self.view.tournament_menu()
-        command = self.view.get_user_choice()
+        command = self.view.tournament_menu_user_choice()
         self.tournament_menu_select(command)
 
     def tournament_menu_select(self, command):
         if command.choice == 1:
             self.display_tournaments()
         elif command.choice == 2:
-            self.tournament_menu_create()
+            self.display_tournament_details()
         elif command.choice == 3:
-            self.tournament_generate()
+            self.tournament_menu_create()
         elif command.choice == 4:
-            self.tournament_menu_start()
+            self.tournament_generate()
         elif command.choice == 5:
-            self.tournament_menu_continue()
+            self.tournament_add_players()
         elif command.choice == 6:
+            self.tournament_menu_start()
+        elif command.choice == 7:
+            self.tournament_menu_continue()
+        elif command.choice == 8:
             MainController()
 
     def display_tournaments(self):
-        pass
+        tournaments = Tournament.get_tournaments_repertory()
+        self.view.display_tournaments(tournaments)
+        # on retourne au menu
+        self.tournament_menu()
+
+    def display_tournament_details(self):
+        command = self.view.tournament_details_get_tournament_id()
+        tournament = Tournament.find_by_id(command.choice)
+        # TODO 'nécessite de finir la serialisation de l'objet en text / json
+        self.tournament_menu()
 
     def tournament_menu_create(self):
         command = self.view.tournament_create_menu()
@@ -157,44 +169,55 @@ class TournamentController():
         for _ in range(command.choice):
             command_tournament = self.generateur.generate_tournament_all_attrs()
             # trier par date de début avant création ?
-            toto = self.tournament_create(command_tournament)
-            print(toto)
+            tournoi = self.tournament_create(command_tournament)
+            print(f"Génération du tournoi >> {tournoi}")
+        self.tournament_menu()
+
+    def tournament_add_players(self):
+        command_tournoi = self.view.tournament_add_players_get_tournament_id()
+        command_players = self.view.tournament_add_players_get_players_id()
+        self.add_players_by_ids(command_tournoi.choice, command_players.players_id_list)
+        # TODO afficher le resultat
+        # self.tournament_add_players_display()
         self.tournament_menu()
 
     def tournament_menu_start(self):
-        pass
+        command = self.view.tournament_menu_start()
+        tournament = Tournament.find_by_id(command.choice)
+        tournament.change_status(TournamentStatus.IN_PROGRESS)
+        self.tour.generate_round()
+        self.tournament_menu()
 
     def tournament_menu_continue(self):
         pass
 
+    def add_players_by_ids(self, tournament_id: int, player_list: list[int]):
+        for player_id in player_list:
+            self.add_player(tournament_id, player_id)
+
+    def add_player(self, tournament_id: int, player_id: int):
+        # initialisation du score à 0
+        INIT_VALUE = 0
+
+        tournament = Tournament.find_by_id(tournament_id)
+        player = Player.find_by_id(player_id)
+        # on ajoute le joueur et son score a la liste du tournoi
+        tournament.player_list.append([player, INIT_VALUE])
+        # on ajoute également le tournoi à la liste de ceux joués par le joueur
+        player.add_tournament_by_id(tournament.id)
+        logging.info("Ajout du joueur [{}] au tournoi [{}]".format(player, tournament))
+        # TODO afficher la liste des joueurs ajoutés en confirmation
+
 
 class TournamentManagement():
     def __init__(self) -> None:
-        self.manage_round = RoundManagement()
+        pass
+        #self.manage_round = RoundManagement()
 
     def create(self, **kwargs) -> Tournament:
         tournament = Tournament(**kwargs)
         self.__create_round(tournament, tournament.number_of_rounds)
         return tournament
-
-    @staticmethod
-    def get_tournament_by_id(tournament_id: int) -> Tournament:
-        return Tournament.tournament_repertory[tournament_id]
-
-    def add_players_from_ids(self, tournament_id: int, player_list: list):
-        tournament = self.get_tournament_by_id(tournament_id)
-        for player_id in player_list:
-            player = PlayerManagement.get_player_by_id(player_id)
-            self.add_player(tournament, player)
-
-    def add_player(self, tournament: Tournament, player: Player):
-        # initialisation du score à 0
-        score = 0
-        # on ajoute le joueur et son score a la liste du tournoi
-        # TODO a passer en dict
-        tournament.player_list.append([player, score])
-        # on ajoute également le tournoi à la liste de ceux joués par le joueur
-        PlayerManagement.add_tournament(player, tournament)
 
     def __create_round(self, tournament: Tournament, nb_of_rounds: int):
         for round_number in range(1, nb_of_rounds + 1):
@@ -204,25 +227,30 @@ class TournamentManagement():
     def __add_round(self, tournament: Tournament, round: Round):
         tournament.rounds_list.append(round)
 
+
 class RoundController():
     view = None
+    service = None
 
     def __init__(self):
-      pass
-  #  self.view = view
-  
-  # def generate_round(self, command):
-  #  tournament = Tournament.find_by_code(command.getTournamentCode())
-  #  players = Player.find_by_tournaments(tournament)
-  #  games = GenerateRoundUseCase().generate(tournament, players)
-  #  Round.create(tournament, games)
-  #  print("Le tournoi a bien été ajouté")
+        self.view = RoundView()
+        self.service = GenerateRoundService()
+    # def generate_round(self, command):
+    #  tournament = Tournament.find_by_id(command.getTournamentCode())
+    #  players = Player.find_by_tournaments(tournament)
+    #  games = GenerateRoundUseCase().generate(tournament, players)
+    #  Round.create(tournament, games)
+    #  print("Le tournoi a bien été ajouté")
 
     def generate_round(self, command):
-    # command = self.view.generate_round_menu()
-    # games = GenerateRoundUseCase().generate(tournament, players)
-        print("Le tour a bien été ajouté")
+        # quel tour est en cours, et si tous les scores ont bien été renseignés
+        # demande confirmation de fin de round
+        command = self.view.generate_round_menu()
+        # ajouter date et heure de fin de l'ancien round
+        # ajouter date et heure de début du nouveau round
 
+        #games = GenerateRoundUseCase().generate(tournament, players)
+        print("Le tour a bien été ajouté")
 
     def create(self, **kwargs):
         round = Round(**kwargs)

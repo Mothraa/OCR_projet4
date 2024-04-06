@@ -30,6 +30,7 @@ from chess.command import (MainMenuCommand,
 #                 except Exception as e:
 #                     print(e)
 #         return wrapper
+#         logging.debug("choix menu >> " + str(args[choix - 1]))
 
 # class MainView(InputErrorHandler):
 #     @InputErrorHandler.catch_input_errors
@@ -97,7 +98,7 @@ class PlayerView:
 
 class TournamentView:
     def __init__(self) -> None:
-        self.tournament_menu()
+        pass
 
     def tournament_menu(self):
         print(text.TOURNAMENT_MENU)
@@ -187,37 +188,18 @@ class TournamentView:
             except Exception as e:
                 print(e)
 
-# class RoundView:
-#     def __init__(self):
-#         pass
+class RoundView:
+    def __init__(self):
+        pass
 
-#     def generate_round_menu(self):
-#         print(text.ROUND_MENU)
-#         tournament_code = int(input())
-#         return GenerateRoundCommand(tournament_code)
+    def generate_round_menu(self):
+        print(text.ROUND_MENU)
+        tournament_code = int(input())
+        return GenerateRoundCommand(tournament_code)
 
 
 class View:
 
-    def __init__(self):
-        self.controller = Controller()
-        self.createur = Creator()
-        # controller.run()
-
-    def main_menu(self):
-
-        View.menu_format("Application d'échec",
-                         "Menu principal",
-                         type='title'
-                         )
-        # TODO : utiliser enumerate pour la numérotation ?
-        View.menu_format("Gestion joueurs",
-                         "Gestion Tournois",
-                         "Jouer un tournoi",
-                         type='choice'
-                         )
-
-        View.menu_input(self.menu_player, self.menu_tournament, self.tournament_play)
 
     @staticmethod
     def menu_format(*args, type):
@@ -257,76 +239,6 @@ class View:
             # ajoute par défaut l'option pour quitter a tous les menus
             print(str(len(args) + 1) + " - Quitter")
 
-    @staticmethod
-    def menu_input(* args):
-
-        num_quit = len(args) + 1
-
-        choix = None
-        while choix not in range(1, num_quit + 1):
-            try:
-                choix = int(input("Choix : "))
-            except ValueError:
-                print("Merci de saisir un numéro.")
-            except IndexError:
-                print("Merci de saisir un numéro valide.")
-            except Exception as e:
-                print(e)
-
-        if choix == num_quit:
-            return print("A bientôt !")
-
-        logging.debug("choix menu >> " + str(args[choix - 1]))
-        args[choix - 1]()
-
-    @staticmethod
-    def get_input(input_message: str, input_type: type) -> any:
-        while True:
-            input_value = input(input_message)
-            if InputManagement.check_input(input_value, input_type):
-                # TODO a refactoriser pour intégrer plusieurs types possibles (None)
-                if input_type == str:
-                    result = str(input_value)
-                elif input_type == date:
-                    result = date.fromisoformat(input_value)
-                elif input_type == int:
-                    result = int(input_value)
-                return result
-
-    def menu_player(self):
-        View.menu_format("Menu joueurs", type='title')
-        View.menu_format("Création joueur",
-                         "Génération joueur (POUR TEST UNIQUEMENT)",
-                         "Retour au menu principal",
-                         type='choice'
-                         )
-        View.menu_input(self.player_create, self.player_generate, self.main_menu)
-
-    def menu_tournament(self):
-        View.menu_format("Menu tournois", type='title')
-        View.menu_format("Afficher la liste des tournois",
-                         "Nouveau tournoi",
-                         "Génération tournoi (POUR TEST UNIQUEMENT)",
-                         "Modifier Tournoi",
-                         "Menu principal",
-                         type='choice'
-                         )
-        View.menu_input(self.tournament_show_all,
-                        self.tournament_create,
-                        self.tournament_generate,
-                        self.tournament_modify,
-                        self.main_menu
-                        )
-
-    def player_create(self):
-        View.menu_format("Création joueur", type='title')
-        last_name = View.get_input("Saisir le nom de famille :", str)
-        first_name = View.get_input("Saisir le prénom :", str)
-        birthdate = View.get_input("Saisir la date de naissance au format AAAA-MM-JJ :", date)
-        # TODO : ajouter les autres inputs
-        self.controller.manage_player.create(last_name=last_name, first_name=first_name, birthdate=birthdate)
-        # on retourne sur le menu précédent
-        self.menu_player()
 
     def player_generate(self):
         nb_players = View.get_input("Nombre de joueurs à créer :", int)
@@ -379,21 +291,6 @@ class View:
                         self.main_menu,
                         )
         # self.menu_tournament()
-
-    def tournament_add_player(self):
-        View.menu_format("Ajouter des joueurs au tournoi", type='title')
-        repertory_tournament = Tournament.get_tournament_repertory()
-        tournament_id = View.get_input("ID du tournoi à modifier :", int) - 1  # TODO revoir les index pour éviter le -1 ?
-
-        print("Tournoi : " + str(repertory_tournament[tournament_id]))
-        print("Liste joueurs : " + str(Player.get_player_repertory()))
-        print("indiquez un ou plusieurs ID de joueurs séparés par des espaces")
-
-        players_id_list = (input("Choix ID Joueurs :")).strip().split(sep=" ")
-        # TODO revoir les index pour éviter le -1 ?
-        players_id_list = [InputManagement.check_input(player_id, int) - 1 for player_id in players_id_list]
-        self.controller.manage_tournament.add_players_from_ids(tournament_id, players_id_list)
-        self.menu_tournament()
 
     def tournament_modify_infos(self, tournament_id: int):
         print("Informations du tournoi selectionné, entrer pour passer sans modifier")
