@@ -77,8 +77,7 @@ TOURNAMENT_START_MENU = """**** Débuter un tournoi ****\n
     Indiquer l'ID du tournoi :
     """
 
-ROUND_MENU = """
-  Tours\n
-  1. Ajouter un tour
-  2. Générer un tour
-"""
+ROUND_MENU = """**** Ajouter un tour à un tournoi ****\n
+    << Attention >> l'ajout d'un tour va cloturer le tour précédent.
+    Indiquez l'ID du tournoi auquel vous souhaitez ajouter un tour :
+    """

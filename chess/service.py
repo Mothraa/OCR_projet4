@@ -1,9 +1,9 @@
 import random
 
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 from faker import Faker
-from . import model
+from chess import model
 # from chess.controller import PlayerController
 
 
@@ -59,19 +59,47 @@ class GenerateTournamentService(Generator):
 
 # Service: Approche 2
 class GenerateRoundService(Generator):
+    round_attrs = model.Round
+
     def __init__(self) -> None:
         super().__init__()
 
-#     def create_round(self, tournament: Tournament, players: Player[]) -> None:
-#         tournament = Tournament.find_by_code(command.getTournamentCode())
-#         players = Player.find_by_tournaments(tournament)
-#         games = self.compose_games(tournament, players)
-#         return Round.create(tournament, games)
+    def create_matchs(self, tournament: model.Tournament) -> None:
 
-#     def compose_games(tournament, playes):
-#         match = ()
-#         # TODO: Logique composer les matchs. (P1, P2, 0, 0
-#         return match
+        round_number = tournament.get_actual_round_number()
+        tournament.sort_players_by_score()
+        temp_round_list = tournament.player_list.copy()
+        matchs_list = []
+        # score_player1 = None
+        # score_player2 = None
+
+        while len(temp_round_list) >= 2:
+            # au premier tour random sur les paires
+            if round_number == 0:  # le premier round est celui d'indice 0
+                player1 = temp_round_list.pop(random.randrange(len(temp_round_list)))
+                player2 = temp_round_list.pop(random.randrange(len(temp_round_list)))
+            else:
+                # ensuite on prend suivant l'ordre du classement
+                player1 = temp_round_list.pop(0)
+                i = 0
+                # On évite de créer des matchs identiques
+                while len(temp_round_list) > 1:
+                    # on regarde si le player1 a déjà joué avec le player2, si oui on passe au suivant
+                    # TODO : précision sur le cahier des charges, se limiter aux joueurs ayant le même score ?
+
+                    player2 = temp_round_list[i]
+
+                    if player1[0].already_played_with_in_tournament(player2[0], tournament):
+                        i += 1
+                    else:
+                        player2 = temp_round_list.pop(i)
+                        break
+                # si il ne reste plus qu'un joueur sur la liste, pas le choix
+                if len(temp_round_list) == 1:
+                    player2 = temp_round_list.pop(0)
+            matchs_list.append((player1, player2))
+
+        return matchs_list
 
 
 class CreatorDeprecated(Generator):

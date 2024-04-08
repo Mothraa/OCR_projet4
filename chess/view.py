@@ -1,6 +1,3 @@
-import logging
-
-from datetime import date
 
 #from chess.controller import Controller, InputManagement
 from chess.model import Player, Tournament, TournamentStatus
@@ -17,6 +14,7 @@ from chess.command import (MainMenuCommand,
                            TournamentAddPlayerCommand,
                            PlayersToAddInTournamentCommand,
                            TournamentStartCommand,
+                           CreateRoundCommand,
                            )
 
 # # exemple de décorateur a généraliser pour get_user_choice()
@@ -188,161 +186,19 @@ class TournamentView:
             except Exception as e:
                 print(e)
 
+
 class RoundView:
     def __init__(self):
         pass
 
-    def generate_round_menu(self):
+    def create_round_menu(self):
         print(text.ROUND_MENU)
-        tournament_code = int(input())
-        return GenerateRoundCommand(tournament_code)
+        tournament_choice = input()
+        return CreateRoundCommand(tournament_choice)
 
 
 class View:
 
-
-    @staticmethod
-    def menu_format(*args, type):
-        NB_AJOUT_ESPACES = 10
-
-        if type == "title":
-
-            max_len = 0
-            for texte in args:
-                if max_len < len(texte):
-                    max_len = len(texte)
-            max_len = max_len + NB_AJOUT_ESPACES
-            # on traite le cas ou le nombre est impair (pb de centrage)
-            if (max_len % 2) != 0:
-                max_len += 1
-
-            print("*" * max_len)
-            print("*" + " " * (max_len - 2) + "*")
-            for texte in args:
-                len_espace = max_len - len(texte) - 2
-                espace = int(len_espace / 2)
-
-                if (len_espace % 2) != 0:
-                    # on ajoute un espace en plus a la fin si impaire
-                    texte_temp = "*" + " " * espace + texte + " " * espace + " *"
-                else:
-                    texte_temp = "*" + " " * espace + texte + " " * espace + "*"
-                print(texte_temp)
-
-            print("*" + " " * (max_len - 2) + "*")
-            print("*" * max_len)
-
-        elif type == "choice":
-            for i, texte in enumerate(args, 1):
-                print(str(i) + " - " + texte)
-            # print("Tapez le numéro de l'option souhaitée :")
-            # ajoute par défaut l'option pour quitter a tous les menus
-            print(str(len(args) + 1) + " - Quitter")
-
-
-    def player_generate(self):
-        nb_players = View.get_input("Nombre de joueurs à créer :", int)
-        self.createur.player(nb_players)
-        print("Génération des joueurs : " + str(Player.get_player_repertory()))
-        # on retourne sur le menu précédent
-        self.menu_player()
-
-    def tournament_create(self):
-        View.menu_format("Création d'un tournoi", type='title')
-        name = View.get_input("Nom du tournoi :", str)
-        location = View.get_input("lieu :", str)
-        start_date = View.get_input("date début (format AAA/MM/JJ) :", date)
-        end_date = View.get_input("date fin (format AAA/MM/JJ) :", date)
-        # TODO ajouter le None
-        number_of_rounds = View.get_input("Nombre tours (4 par défaut) :", int) # type(None))
-        description = View.get_input("Description :", str)
-        # tournoi = self.controller.manage_tournament.create(name=name,
-        self.controller.manage_tournament.create(name=name,
-                                                 location=location,
-                                                 start_date=start_date,
-                                                 end_date=end_date,
-                                                 number_of_rounds=number_of_rounds,
-                                                 description=description,
-                                                 )
-        # on retourne sur le menu précédent
-        self.menu_tournament()
-
-    def tournament_generate(self):
-        nb_tournaments = View.get_input("Saisir le nombre de tournois à générer :", int)
-        self.createur.tournament(nb_tournaments)
-        print("Génération des tournois : " + str(Tournament.get_tournament_repertory()))
-        # on retourne sur le menu précédent
-        self.menu_tournament()
-
-    def tournament_show_all(self):
-        print("Tournois : " + str(Tournament.get_tournament_repertory()))
-        self.menu_tournament()
-
-    def tournament_modify(self):
-        View.menu_format("Modification d'un tournoi", type='title')
-        View.menu_format("Ajouter des joueurs à un tournoi",
-                         # "Modifier les informations d'un tournoi",
-                         ""
-                         "Retour au menu principal",
-                         type='choice'
-                         )
-        View.menu_input(self.tournament_add_player,
-                        # self.tournament_modify_infos,
-                        self.main_menu,
-                        )
-        # self.menu_tournament()
-
-    def tournament_modify_infos(self, tournament_id: int):
-        print("Informations du tournoi selectionné, entrer pour passer sans modifier")
-
-        # name = input("Nom du tournoi > ")
-        # location = input("lieu > ")
-        # start_date = input("date début (format AAA/MM/JJ) > ")
-        # end_date = input("date fin (format AAA/MM/JJ) > ")
-        # number_of_rounds = input("Nombre tours (4 par défaut) > ")
-        # description = input("Description > ")
-
-        self.menu_tournament()
-
-    def tournament_play(self):
-        View.menu_format("Informations sur un tournoi",
-                         "Démarrer un tournoi",
-                         "Commencer un tour",
-                         "Terminer un round",
-                         # "Ajouter un round",
-                         "Retour au menu principal",
-                         type='choice'
-                         )
-
-        View.menu_input(self.tournament_infos,
-                        self.tournament_start,
-                        self.tournament_start_round,
-                        self.tournament_end_round,
-                        # self.tournament_add_round,
-                        self.main_menu,
-                        )
-
-    def tournament_infos(self):
-        View.menu_format("Informations sur un tournoi", type='title')
-        tournament_repertory = Tournament.get_tournament_repertory()
-        tournament_id = View.get_input("ID du tournoi :", int) - 1  # TODO revoir les index pour éviter le -1 ?
-        print("Tournoi : " + str(tournament_repertory[tournament_id]))
-
-        self.tournament_play()
-
-    def tournament_start(self):
-        View.menu_format("Commencer un tournoi", type='title')
-        tournament_id = View.get_input("ID du tournoi :", int) - 1  # TODO revoir les index pour éviter le -1 ?
-        # TODO : instancier le tournoi ou récup juste dans la liste ?
-        # ajouter statut début tournoi
-        Tournament.tournament_repertory[tournament_id].status = TournamentStatus.IN_PROGRESS
-        # ajouter une date/heure de début du tournoi <= non spécifié, on utilise les dates renseignées à la création
-        print("Début du tournoi : {}\n"
-              .format(Tournament.tournament_repertory[tournament_id])
-              + "Le tournoi est en {} tour(s).\n"
-              .format(Tournament.tournament_repertory[tournament_id].number_of_rounds)
-              + "Merci de débuter un tour")
-        self.tournament_play()
 
     def tournament_start_round(self):
         View.menu_format("Commencer un tour", type='title')
@@ -373,4 +229,3 @@ class View:
         # demander confirmation a l'utilisateur cloture round x
         # ajouter les scores par l'utilisateur
         # ajouter date/heure de fin
-

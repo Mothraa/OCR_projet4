@@ -1,5 +1,5 @@
 import random
-from operator import itemgetter
+from datetime import datetime
 
 import logging
 from chess.view import MainView, PlayerView, TournamentView, RoundView
@@ -45,7 +45,7 @@ class MainController():
 
 class PlayerController():
     view = None
-    generateur = None
+    service = None
 
     def __init__(self) -> None:
         self.view = PlayerView()
@@ -86,10 +86,10 @@ class PlayerController():
 
     def players_generate(self):
         command = self.view.player_generate_menu()
-        self.generateur = GeneratePlayerService()
+        self.service = GeneratePlayerService()
 
         for _ in range(command.choice):
-            command_player = self.generateur.generate_player_all_attrs()
+            command_player = self.service.generate_player_all_attrs()
             self.player_create(command_player)
         #     player_list.append(player)
         # return player_list
@@ -110,10 +110,12 @@ class PlayerController():
 class TournamentController():
     view = None
     tour = None
+    service = None
 
     def __init__(self) -> None:
         self.view = TournamentView()
         self.tour = RoundController()
+        self.service = GenerateTournamentService()
         self.tournament_menu()
 
     def tournament_menu(self):
@@ -164,10 +166,9 @@ class TournamentController():
 
     def tournament_generate(self):
         command = self.view.tournament_generate_menu()
-        self.generateur = GenerateTournamentService()
 
         for _ in range(command.choice):
-            command_tournament = self.generateur.generate_tournament_all_attrs()
+            command_tournament = self.service.generate_tournament_all_attrs()
             # trier par date de début avant création ?
             tournoi = self.tournament_create(command_tournament)
             print(f"Génération du tournoi >> {tournoi}")
@@ -184,48 +185,34 @@ class TournamentController():
     def tournament_menu_start(self):
         command = self.view.tournament_menu_start()
         tournament = Tournament.find_by_id(command.choice)
-        tournament.change_status(TournamentStatus.IN_PROGRESS)
-        self.tour.generate_round()
+        self.tournament_init(tournament)
+        self.tour.create_first_round(tournament)
         self.tournament_menu()
 
+    def tournament_init(self, tournament: Tournament):
+        tournament.current_round_number = 0
+        tournament.change_status(TournamentStatus.IN_PROGRESS)
+
     def tournament_menu_continue(self):
-        pass
+        self.tour.create_next_round()
+        self.tournament_menu()
 
     def add_players_by_ids(self, tournament_id: int, player_list: list[int]):
         for player_id in player_list:
-            self.add_player(tournament_id, player_id)
+            self.add_player_by_id(tournament_id, player_id)
 
-    def add_player(self, tournament_id: int, player_id: int):
-        # initialisation du score à 0
-        INIT_VALUE = 0
-
+    def add_player_by_id(self, tournament_id: int, player_id: int):
         tournament = Tournament.find_by_id(tournament_id)
         player = Player.find_by_id(player_id)
-        # on ajoute le joueur et son score a la liste du tournoi
-        tournament.player_list.append([player, INIT_VALUE])
+        self.add_player(tournament, player)
+
+    def add_player(self, tournament: Tournament, player: Player):
+        # on ajoute le joueur a la liste du tournoi
+        tournament.add_player_to_tournament(player)
         # on ajoute également le tournoi à la liste de ceux joués par le joueur
-        player.add_tournament_by_id(tournament.id)
+        player.add_tournament_to_player(tournament)
         logging.info("Ajout du joueur [{}] au tournoi [{}]".format(player, tournament))
         # TODO afficher la liste des joueurs ajoutés en confirmation
-
-
-class TournamentManagement():
-    def __init__(self) -> None:
-        pass
-        #self.manage_round = RoundManagement()
-
-    def create(self, **kwargs) -> Tournament:
-        tournament = Tournament(**kwargs)
-        self.__create_round(tournament, tournament.number_of_rounds)
-        return tournament
-
-    def __create_round(self, tournament: Tournament, nb_of_rounds: int):
-        for round_number in range(1, nb_of_rounds + 1):
-            round = self.manage_round.create(round_number=round_number)
-            self.__add_round(tournament, round)
-
-    def __add_round(self, tournament: Tournament, round: Round):
-        tournament.rounds_list.append(round)
 
 
 class RoundController():
@@ -235,76 +222,68 @@ class RoundController():
     def __init__(self):
         self.view = RoundView()
         self.service = GenerateRoundService()
-    # def generate_round(self, command):
-    #  tournament = Tournament.find_by_id(command.getTournamentCode())
-    #  players = Player.find_by_tournaments(tournament)
-    #  games = GenerateRoundUseCase().generate(tournament, players)
-    #  Round.create(tournament, games)
-    #  print("Le tournoi a bien été ajouté")
 
-    def generate_round(self, command):
-        # quel tour est en cours, et si tous les scores ont bien été renseignés
-        # demande confirmation de fin de round
-        command = self.view.generate_round_menu()
-        # ajouter date et heure de fin de l'ancien round
-        # ajouter date et heure de début du nouveau round
+    def create_round(self, tournament: Tournament) -> Round:
+        # ajout date et heure de début du nouveau round
+        now = datetime.now()
+        tournament.current_round_number += 1
+        chess_round = Round(round_number=tournament.current_round_number, start_date=now)
+        return chess_round
 
-        #games = GenerateRoundUseCase().generate(tournament, players)
-        print("Le tour a bien été ajouté")
+    def create_first_round(self, tournament: Tournament):
+        # on génère un tour
+        chess_round = self.create_round(tournament)
+        # création des matchs
+        chess_round.matchs_list = self.create_matchs(tournament)
+        # ajout du round a l'objet tournoi
+        self.tournament_add_round(tournament, chess_round)
 
-    def create(self, **kwargs):
-        round = Round(**kwargs)
-        return round
+
+    def create_next_round(self):
+        command = self.view.create_round_menu()
+        tournament = Tournament.find_by_id(command.choice)
+        # on termine le round précédent
+        self.end_round(tournament)
+        # puis on génère le nouveau tour
+        chess_round = self.create_round(tournament)
+        # création des matchs
+        chess_round.matchs_list = self.create_matchs(tournament)
+        # ajout du round a l'objet tournoi
+        self.tournament_add_round(tournament, chess_round)
+
+    def tournament_add_round(self, tournament: Tournament, chess_round: Round):
+        tournament.rounds_list.append(chess_round)
+        print(f"Le {chess_round.round_name} a bien été ajouté")
+        logging.info("Ajout du {} au tournoi [{}]".format(chess_round.round_name, tournament))
+
+    def end_round(self, tournament: Tournament):
+        # ajout heure de fin du round
+        now = datetime.now()
+        round_indice = tournament.get_actual_round_number() - 1
+        round = tournament.rounds_list[round_indice]
+        round.end_date = now
 
     def create_matchs(self, tournament: Tournament):
-        for round_number in range(tournament.number_of_rounds):
-            # on génère des couples de joueurs et un score aléatoire
-            self.create_players_peers(tournament, round_number)
-            # on tri la liste des joueurs suivant les résultats
-            tournament.player_list.sort(key=itemgetter(1), reverse=True)
-        pass
-
-    def create_players_peers(self, tournament: Tournament, round_number: int) -> None:
-
-        actual_round_list = tournament.player_list.copy()
-
-        while len(actual_round_list) >= 2:
-
-            # au premier tour random sur les paires
-            if round_number == 0:  # le premier round est celui d'indice 0
-                player1 = actual_round_list.pop(random.randrange(len(actual_round_list)))
-                player2 = actual_round_list.pop(random.randrange(len(actual_round_list)))
-            else:
-                # ensuite on prend suivant l'ordre du classement
-                player1 = actual_round_list.pop(0)
-                # On évite de créer des matchs identiques
-                i = 0
-                while len(actual_round_list) > 1:
-                    # on regarde si le match a déjà été jouer, si oui on passe au suivant
-                    if player2 in player1.tournaments_history[tournament.id][i]:
-                        i += 1
-                    else:
-                        player2 = actual_round_list.pop(0)
-                        break
-                # si il ne reste plus qu'un joueur sur la liste
-                if len(actual_round_list) == 1:
-                    player2 = actual_round_list.pop(0)
+        matchs_list = self.service.create_matchs(tournament)
+        return matchs_list
 
 
-            # TODO : a déplacer dans fonction dédiée
-            # génération d'un score aléatoire
-            result_match = self.match_add_scores(player1, player2)
-            tournament.rounds_list[round_number].matchs_list.append(result_match)
 
-            # mise à jour des scores généraux du tournoi
-            tournament.player_list[tournament.player_list.index(player1)][1] += result_match[0][1]
-            tournament.player_list[tournament.player_list.index(player2)][1] += result_match[1][1]
+    # def generate_scores(self, tournament: Tournament):
 
-    def match_add_scores(self, player1: Player, player2: Player) -> tuple:
-        return Creator.score(player1, player2)
+    #     # génération d'un score aléatoire
+    #     result_match = self.match_add_scores(player1, player2)
+    #     tournament.rounds_list[round_number].matchs_list.append(result_match)
 
-    def check_number_of_players():
-        pass
+    #     # mise à jour des scores généraux du tournoi
+    #     tournament.player_list[tournament.player_list.index(player1)][1] += result_match[0][1]
+    #     tournament.player_list[tournament.player_list.index(player2)][1] += result_match[1][1]
+
+
+    # def match_add_scores(self, player1: Player, player2: Player) -> tuple:
+    #     return Creator.score(player1, player2)
+
+
 
 class MatchController():
     def __init__(self) -> None:

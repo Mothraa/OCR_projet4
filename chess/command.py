@@ -273,9 +273,60 @@ class TournamentStartCommand:
     def check_tournament_status(self):
         tournament = Tournament.find_by_id(self.choice)
         # on vérifie que le statut du tournoi soit au statut CREATED
-        if tournament.get_status() != TournamentStatus.CREATED:
-            raise ValueError(f"Le tournoi ne peut être commencé, son statut est {tournament.status}")
+        if tournament.get_status() is not TournamentStatus.CREATED:
+            raise ValueError(f"Le tournoi ne peut être commencé, son statut est {tournament.get_status()}")
 
+        # qu'il y ai au moins 2 joueurs
+        if len(tournament.get_player_list()) <= 2:
+            raise ValueError("Le tournoi ne peut être commencé, pas assez de joueurs")
+
+
+class CreateRoundCommand:
+    choice = None
+
+    def __init__(self, choice):
+        self.choice = choice
+        self.self_validate()
+        self.clean_up()
+        self.check_tournament_status()
+        self.check_played_matchs()
+
+    def self_validate(self):
+        if self.choice is None:
+            raise ValueError("Merci d'indiquer une valeur valide")
+        elif not isinstance(int(self.choice), int) or int(self.choice) < 0:
+            raise ValueError("Merci d'indiquer un nombre entier positif")
+
+    def clean_up(self):
+        self.choice = int(self.choice)
+
+    def check_tournament_status(self):
+        tournament = Tournament.find_by_id(self.choice)
+        # on vérifie que le statut du tournoi soit au statut IN_PROGRESS
+        if tournament.get_status() is not TournamentStatus.IN_PROGRESS:
+            raise ValueError(f"Le tournoi ne peut être poursuivi, son statut est {tournament.get_status()}")
+
+        # on vérifie si on peut toujours ajouter des rounds (limite de rounds atteinte)
+        if tournament.current_round_number == tournament.number_of_rounds:
+            raise ValueError("Tous les rounds du tournoi ont déjà été créés")
+
+    def check_played_matchs(self):
+        tournament = Tournament.find_by_id(self.choice)
+        # on vérifie que tous les matchs du tour précédent ont été joués
+        round_indice = tournament.get_actual_round_number() - 1
+        round = tournament.rounds_list[round_indice]
+        for match in round.matchs_list:
+            # on regarde les scores des matchs (sous la forme de tuples : (player1, score1)(player2, score2))
+            # TODO créer une fonction get_match_score (par ex)
+            if match[0][1] == 0.0 and match[1][1] == 0.0:
+                raise ValueError("Les matchs du tournoi / tour indiqué ne sont pas terminés")
+
+
+
+class TournamentContinueCommand:
+    def check_round_scores(self):
+        pass
+        # verifie si tous les scores du round on ont bien été renseignés
 
 # exemple avec decorateur
     # def validate_input(func):

@@ -1,5 +1,5 @@
 from enum import Enum  # , IntEnum
-
+from operator import itemgetter
 
 class ExtendedEnum(Enum):
     @classmethod
@@ -13,49 +13,10 @@ class TournamentStatus(ExtendedEnum):
     TERMINATED = 3
 
 
-class Player:
-    id = None
-    national_chess_id = None
-    first_name = None
-    last_name = None
-    birthdate = None
-    tournaments_history = []
-    players_repertory = []
-
-    def __init__(self, player_data):
-        self.id = self.__create_id()
-        self.national_chess_id = player_data.national_chess_id
-        self.first_name = player_data.first_name
-        self.last_name = player_data.last_name
-        self.birthdate = player_data.birthdate
-        Player.players_repertory.append(self)
-
-    def __create_id(self):
-        _id = len(Player.players_repertory)
-        return _id
-
-    @staticmethod
-    def get_players_repertory():
-        return Player.players_repertory
-
-    @staticmethod
-    def find_by_id(player_id: int):
-        return Player.players_repertory[player_id]
-
-    # def add_tournament_from(self, tournament: Tournament):
-    #     self.tournaments_history.append(tournament)
-
-    def add_tournament_by_id(self, tournament_id: int):
-        self.tournaments_history.append(Tournament.find_by_id(tournament_id))
-
-    def __repr__(self) -> str:
-        return "ID {}: {} {}".format(self.id,
-                                     self.first_name,
-                                     self.last_name,
-                                     )
-
-    def encode(self):
-        return self.__dict__
+class MatchResult(ExtendedEnum):
+    WIN = 1
+    EQUALITY = 2
+    LOOSE = 3
 
 
 class Tournament:
@@ -69,8 +30,8 @@ class Tournament:
     description = None
     number_of_rounds = None
     current_round_number = None
-    rounds_list = []
-    player_list = []
+    rounds_list = None
+    player_list = None
     tournaments_repertory = []
 
     def __init__(self,  player_data):
@@ -83,6 +44,9 @@ class Tournament:
         self.end_date = player_data.end_date
         self.description = player_data.description
         self.number_of_rounds = player_data.number_of_rounds
+        self.current_round_number = 0
+        self.rounds_list = []
+        self.player_list = []
 
         Tournament.tournaments_repertory.append(self)
 
@@ -100,13 +64,29 @@ class Tournament:
     def get_status(self) -> TournamentStatus:
         return self.status
 
+    def add_player_to_tournament(self, player):
+        # initialisation du score à 0
+        INIT_SCORE = 0.0
+        self.player_list.append([player, INIT_SCORE])
+
+    def get_player_list(self):
+        return self.player_list
+
+    def get_actual_round_number(self):
+        return self.current_round_number
+
     def change_status(self, new_status: TournamentStatus):
-        if self.get_status() == TournamentStatus.TERMINATED:
+        actual_status = self.get_status()
+        if actual_status == TournamentStatus.TERMINATED:
             raise PermissionError("on ne peut modifier le statut d'un tournoi terminé")
-        elif self.get_status() == TournamentStatus.IN_PROGRESS and new_status == TournamentStatus.CREATED:
+        elif actual_status == TournamentStatus.IN_PROGRESS and new_status == TournamentStatus.CREATED:
             raise PermissionError("on ne peut repasser CREATED, un tournoi IN PROGRESS")
         else:
-            self.status == new_status
+            self.status = new_status
+
+    def sort_players_by_score(self):
+        # la liste des joueurs contient des éléments de la forme [Player, score]
+        self.player_list.sort(key=itemgetter(1), reverse=True)
 
     @staticmethod
     def get_tournaments_repertory():
@@ -127,8 +107,105 @@ class Tournament:
 
 class Round:
     def __init__(self, **kwargs):
-        self._id = kwargs.get("round_number")
-        self.round_name = f"Round {kwargs.get("round_number")}"
+        self.id = kwargs.get("round_number")
+        self.round_name = f"Tour {kwargs.get("round_number")}"
         self.start_date = kwargs.get("start_date")
         self.end_date = kwargs.get("end_date")
         self.matchs_list = []
+
+    def add_match(self):
+        """ format des matchs :
+        ([player1, score_player1], [player2, score_player2])
+        """
+        pass
+
+    def calculate_points(self):
+        pass
+
+    def add_score(self):
+        pass
+
+
+class Player:
+    id = None
+    national_chess_id = None
+    first_name = None
+    last_name = None
+    birthdate = None
+    tournaments_history = None
+    matchs_history = None
+    players_repertory = []
+
+    def __init__(self, player_data):
+        self.id = self.__create_id()
+        self.national_chess_id = player_data.national_chess_id
+        self.first_name = player_data.first_name
+        self.last_name = player_data.last_name
+        self.birthdate = player_data.birthdate
+        self.tournaments_history = []
+        # Historique des matchs joués, sous la forme d'une liste de tuples
+        # (ID tournoi, round, ID adversaire, score_joueur, score_adversaire, resultat: win, loose, equality)
+        self.matchs_history = []
+        Player.players_repertory.append(self)
+
+    def __create_id(self):
+        _id = len(Player.players_repertory)
+        return _id
+
+    @staticmethod
+    def get_players_repertory():
+        """Liste de tous les joueurs"""
+        return Player.players_repertory
+
+    @staticmethod
+    def find_by_id(player_id: int):
+        """Retourne un jouer depuis son ID"""
+        return Player.players_repertory[player_id]
+
+    # TODO : je ne peux pas déclarer def add_tournament_from(self, tournament: Tournament): car Tournament pas encore def... comment faire ?
+    def add_tournament_to_player(self, tournament):
+        self.tournaments_history.append(tournament)
+
+    def add_tournament_to_player_by_id(self, tournament_id: int):
+        self.add_tournament_to_player(Tournament.find_by_id(tournament_id))
+
+    def get_tournament_history(self, tournament):
+        """Historique des tournois joués"""
+        pass
+
+    def save_matchs_history(self, tournament, round, match_result):
+        result = match_result
+        self.matchs_history.extend((tournament.id, round.id, match_result))
+
+    def get_matchs_history(self):
+        """ Historique des matchs joués :
+            format, liste de tuples => (ID tournoi, round, ID adversaire, score_joueur, score_adversaire, resultat: win, loose, equality)
+        """
+        list_history = []
+        return list_history
+
+    def get_matchs_history_by_tournament(self, tournament):
+        """ Historique des matchs joués par tournoi :
+            format, liste de tuples => (ID tournoi, round, ID adversaire, score_joueur, score_adversaire, resultat: win, loose, equality)
+        """
+        full_list = self.get_matchs_history()
+        list_history = [x for x in full_list if x[0] == tournament.id]
+        return list_history
+
+    def already_played_with_in_tournament(self, player, tournament):
+        """return True if already played with another player"""
+        matchs_list = self.get_matchs_history_by_tournament(tournament)
+        flag = False
+        for match in matchs_list:
+            if match[2] == player.id:
+                flag = True
+        return flag
+
+    def __repr__(self) -> str:
+        return "ID {}: {} {}".format(self.id,
+                                     self.first_name,
+                                     self.last_name,
+                                     )
+
+    def encode(self):
+        return self.__dict__
