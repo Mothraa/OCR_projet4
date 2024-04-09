@@ -1,7 +1,6 @@
 
-#from chess.controller import Controller, InputManagement
-from chess.model import Player, Tournament, TournamentStatus
-#from chess.service import Creator
+from chess.model import Tournament, TournamentStatus
+
 import chess.menu_text as text
 from chess.command import (MainMenuCommand,
                            PlayerMenuCommand,
@@ -28,13 +27,6 @@ class InputErrorHandler:
                 except Exception as e:
                     print(e)
         return wrapper
-
-
-# class MainView(InputErrorHandler):
-#     @InputErrorHandler.catch_input_errors
-#     def get_user_choice(self):
-#         choice = input()
-#         return TournamentMenuCommand(choice)
 
 
 class MainView(InputErrorHandler):
@@ -71,9 +63,7 @@ class PlayerView(InputErrorHandler):
         last_name = input("Saisir le nom de famille :")
         first_name = input("Saisir le prénom :")
         birthdate = input("Saisir la date de naissance au format AAAA-MM-JJ :")
-
-        command = PlayerCreateCommand(last_name=last_name, first_name=first_name, birthdate=birthdate)
-        return command
+        return PlayerCreateCommand(last_name=last_name, first_name=first_name, birthdate=birthdate)
 
     @InputErrorHandler.catch_input_errors
     def player_generate_menu(self):
@@ -121,12 +111,12 @@ class TournamentView(InputErrorHandler):
         description = input("Saisir la description (facultatif) :")
 
         command = TournamentCreateCommand(name=name,
-                                            location=location,
-                                            start_date=start_date,
-                                            end_date=end_date,
-                                            number_of_rounds=number_of_rounds,
-                                            description=description,
-                                            )
+                                          location=location,
+                                          start_date=start_date,
+                                          end_date=end_date,
+                                          number_of_rounds=number_of_rounds,
+                                          description=description,
+                                          )
         return command
 
     @InputErrorHandler.catch_input_errors
@@ -136,17 +126,12 @@ class TournamentView(InputErrorHandler):
         return TournamentGenerateCommand(tournament_number)
 
     @InputErrorHandler.catch_input_errors
-    def tournament_add_players_get_tournament_id(self):
+    def tournament_add_players(self):
         print(text.TOURNAMENT_ADD_PLAYERS_MENU)
         tournament_id = input()
-        return TournamentAddPlayerCommand(tournament_id)
-
-    @InputErrorHandler.catch_input_errors
-    def tournament_add_players_get_players_id(self):
         print(text.TOURNAMENT_ADD_PLAYERS_LIST)
-        players_id = input()
-        return PlayersToAddInTournamentCommand(players_id)
-
+        players_id_list = input()
+        return TournamentAddPlayerCommand(tournament_id, players_id_list)
 
     def tournament_add_players_display(self):
         #TODO

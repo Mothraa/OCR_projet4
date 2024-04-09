@@ -2,6 +2,7 @@ from datetime import date
 
 from chess.model import Player, Tournament, TournamentStatus
 
+
 # TODO : a dispatch dans les classes des commands
 class InputManagement():
     def __init__():
@@ -203,52 +204,43 @@ class TournamentGenerateCommand:
     def clean_up(self):
         self.choice = int(self.choice)
 
-
 class TournamentAddPlayerCommand:
-    """Commande qui attend l'ID d'un tournoi (en int)"""
-    choice = None
+    tournament_id = None
+    players_id_list = []
 
-    def __init__(self, choice):
-        self.choice = choice
+    def __init__(self, tournament_id, input_players_list):
+        self.tournament_id = tournament_id
+        self.input_players_list = input_players_list
         self.self_validate()
         self.clean_up()
         self.check_tournament_status()
 
     def self_validate(self):
-        if self.choice is None:
+        if self.tournament_id is None:
             raise ValueError("Merci d'indiquer un nombre")
-        elif not isinstance(int(self.choice), int) or int(self.choice) < 0:
+        elif not isinstance(int(self.tournament_id), int) or int(self.tournament_id) < 0:
             raise ValueError("Merci d'indiquer un nombre entier positif")
+        #TODO vérifier si l'id renvoi bien vers un tournoi
 
-    def clean_up(self):
-        self.choice = int(self.choice)
-
-    def check_tournament_status(self):
-        tournament = Tournament.find_by_id(self.choice)
-        # on vérifie que le statut du tournoi soit au statut CREATED
-        if tournament.get_status() is not TournamentStatus.CREATED:
-            raise ValueError(f"Impossible d'ajouter des joueurs, son statut est {tournament.status}")
-
-
-class PlayersToAddInTournamentCommand:
-    players_id_list = []
-
-    def __init__(self, input_players_list):
-        self.input_players_list = input_players_list
-        self.self_validate()
-        self.clean_up()
-
-    def self_validate(self):
         # on sépare la chaine de caractère
         id_list = self.input_players_list.strip().split(sep=" ")
         # on transforme chaque ID en int
         id_list = [int(player_id) for player_id in id_list]
         # on vérifie qui les ID indiqués existent
-        [Player.find_by_id(player_id) for player_id in id_list]
+        if not [Player.find_by_id(player_id) for player_id in id_list]:
+            raise ValueError("Merci d'indiquer des ID joueur valides")
 
     def clean_up(self):
+        self.tournament_id = int(self.tournament_id)
+
         id_list = self.input_players_list.strip().split(sep=" ")
         self.players_id_list = [int(player_id) for player_id in id_list]
+
+    def check_tournament_status(self):
+        tournament = Tournament.find_by_id(self.tournament_id)
+        # on vérifie que le statut du tournoi soit au statut CREATED
+        if tournament.get_status() is not TournamentStatus.CREATED:
+            raise ValueError(f"Impossible d'ajouter des joueurs, son statut est {tournament.status}")
 
 
 class TournamentStartCommand:
@@ -321,12 +313,6 @@ class CreateRoundCommand:
             if match[0][1] == 0.0 and match[1][1] == 0.0:
                 raise ValueError("Les matchs du tournoi / tour indiqué ne sont pas terminés")
 
-
-
-class TournamentContinueCommand:
-    def check_round_scores(self):
-        pass
-        # verifie si tous les scores du round on ont bien été renseignés
 
 # exemple avec decorateur
     # def validate_input(func):
