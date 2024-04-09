@@ -64,11 +64,16 @@ class GenerateRoundService(Generator):
     def __init__(self) -> None:
         super().__init__()
 
-    def create_matchs(self, tournament: model.Tournament) -> None:
-
+    def create_matchs(self, tournament: model.Tournament):
+        INIT_SCORE = 0.0
         round_number = tournament.get_current_round_number()
         tournament.sort_players_by_score()
         temp_round_list = tournament.player_list.copy()
+        # remise à 0 des scores pour le nouveau round
+        for i, (_, _) in enumerate(temp_round_list):
+            player = temp_round_list[i][0]
+            temp_round_list[i] = (player, INIT_SCORE)
+
         matchs_list = []
         # score_player1 = None
         # score_player2 = None

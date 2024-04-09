@@ -48,8 +48,10 @@ TOURNAMENT_MENU = """
     4. Générer des tournois (POUR TEST)
     5. Ajouter des joueurs à un tournoi
     6. Commencer un tournoi
-    7. Poursuivre un tournoi
-    8. Retour au menu principal
+    7. Ajouter le score d'un tour
+    8. Débuter un nouveau tour
+    9. Terminer un tournoi
+    10. Retour au menu principal
 """
 
 TOURNAMENT_DETAIL_MENU = """**** Détails sur un tournoi ****\n
@@ -80,4 +82,13 @@ TOURNAMENT_START_MENU = """**** Débuter un tournoi ****\n
 ROUND_MENU = """**** Ajouter un tour à un tournoi ****\n
     << Attention >> l'ajout d'un tour va cloturer le tour précédent.
     Indiquez l'ID du tournoi auquel vous souhaitez ajouter un tour :
+    """
+
+ROUND_MENU_ADD_SCORES = """**** Ajouter des scores à un tour ****\n
+    Indiquez l'ID du tournoi auquel vous souhaitez ajouter les scores :
+    """
+
+TOURNAMENT_END_MENU = """**** Terminer un tournoi ****\n
+    << Attention >> Tous les tours doivent être terminés pour terminer un tournoi
+    Indiquer l'ID du tournoi :
     """

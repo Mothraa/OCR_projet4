@@ -195,7 +195,7 @@ class TournamentController():
     def tournament_menu_add_scores(self):
         self.tour.add_scores()
         self.tournament_menu()
-        
+
     def tournament_init(self, tournament: Tournament):
         tournament.current_round_number = 0
         tournament.change_status(TournamentStatus.IN_PROGRESS)
@@ -203,6 +203,12 @@ class TournamentController():
     def tournament_menu_continue(self):
         self.tour.create_next_round()
         self.tournament_menu()
+
+    def tournament_menu_end(self):
+        command = self.view.tournament_menu_end()
+        tournament = Tournament.find_by_id(command.choice)
+        tournament.change_status(TournamentStatus.TERMINATED)
+        print("Le tournoi {} est terminé, félicitation à tous les participants !".format(tournament))
 
     def add_players_by_ids(self, tournament_id: int, player_list: list[int]):
         for player_id in player_list:
@@ -268,6 +274,7 @@ class RoundController():
         round = tournament.get_current_round()
         #TODO ajouter round_update(*args)
         round.end_date = now
+        tournament.sort_players_by_score()
 
     def create_matchs(self, tournament: Tournament):
         matchs_list = self.service.create_matchs(tournament)
@@ -283,29 +290,13 @@ class RoundController():
         for match in current_round.matchs_list:
             command = self.view.round_menu_add_scores(match)
             (player1, score1), (player2, score2) = command.match
-            player1.add_player_score(score1)
-            player2.add_player_score(score2)
+            tournament.add_score_in_tournament_ranking(score1, player1)
+            tournament.add_score_in_tournament_ranking(score2, player2)
             player1.save_matchs_history(tournament, current_round, command.match)
             player2.save_matchs_history(tournament, current_round, command.match)
             new_matchs_list.append(command.match)
             # TODO : ajouter le score au classement du tournoi
         current_round.matchs_list = new_matchs_list
-
-
-    # def generate_scores(self, tournament: Tournament):
-
-    #     # génération d'un score aléatoire
-    #     result_match = self.match_add_scores(player1, player2)
-    #     tournament.rounds_list[round_number].matchs_list.append(result_match)
-
-    #     # mise à jour des scores généraux du tournoi
-    #     tournament.player_list[tournament.player_list.index(player1)][1] += result_match[0][1]
-    #     tournament.player_list[tournament.player_list.index(player2)][1] += result_match[1][1]
-
-
-    # def match_add_scores(self, player1: Player, player2: Player) -> tuple:
-    #     return Creator.score(player1, player2)
-
 
 
 class MatchController():

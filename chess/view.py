@@ -12,6 +12,7 @@ from chess.command import (MainMenuCommand,
                            TournamentGenerateCommand,
                            TournamentAddPlayerCommand,
                            TournamentStartCommand,
+                           TournamentEndCommand,
                            CreateRoundCommand,
                            TournamentIdCommand,
                            RoundAddScore,
@@ -144,6 +145,11 @@ class TournamentView(InputErrorHandler):
         choice = input()
         return TournamentStartCommand(choice)
 
+    @InputErrorHandler.catch_input_errors
+    def tournament_menu_end(self):
+        print(text.TOURNAMENT_END_MENU)
+        choice = input()
+        return TournamentEndCommand(choice)
 
 class RoundView(InputErrorHandler):
     def __init__(self):

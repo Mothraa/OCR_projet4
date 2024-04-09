@@ -60,6 +60,9 @@ class Tournament:
     def get_player_list(self):
         return self.player_list
 
+    def set_player_list(self, new_player_list):
+        self.player_list = new_player_list
+
     def get_current_round_number(self):
         return self.current_round_number
 
@@ -69,9 +72,8 @@ class Tournament:
         return chess_round
 
     def add_player_to_tournament(self, player):
-        # initialisation du score à 0
         INIT_SCORE = 0.0
-        self.player_list.append([player, INIT_SCORE])
+        self.player_list.append((player, INIT_SCORE))
 
     def change_status(self, new_status: TournamentStatus):
         actual_status = self.get_status()
@@ -82,10 +84,22 @@ class Tournament:
         else:
             self.status = new_status
 
-    def add_player_score(self, score: float):
-        # self.player_list.index(self.id)[0]
-        # += score
+    def add_score_in_tournament_ranking(self, score_to_add: float, player):
+
+        player_list = self.get_player_list()
+        player_index = None
+        for index, (p, _) in enumerate(player_list):
+            if p.id == player.id:
+                player_index = index
+                break
+        (_, score) = player_list[player_index]
+        new_score = score + score_to_add
+        self.player_list[player_index] = (player, new_score)
+
+        # TODO : déplacer le set_player_list dans le controller une fois tous les scores modifiés pour limiter les maj
+        self.set_player_list(player_list)
         pass
+
 
     def sort_players_by_score(self):
         # la liste des joueurs contient des éléments de la forme [Player, score]
