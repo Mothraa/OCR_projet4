@@ -11,9 +11,10 @@ from chess.command import (MainMenuCommand,
                            TournamentCreateCommand,
                            TournamentGenerateCommand,
                            TournamentAddPlayerCommand,
-                           PlayersToAddInTournamentCommand,
                            TournamentStartCommand,
                            CreateRoundCommand,
+                           TournamentIdCommand,
+                           RoundAddScore,
                            )
 
 
@@ -154,11 +155,23 @@ class RoundView(InputErrorHandler):
         tournament_choice = input()
         return CreateRoundCommand(tournament_choice)
 
+    @InputErrorHandler.catch_input_errors
+    def round_menu_current_round(self):
+        print(text.ROUND_MENU_ADD_SCORES)
+        choice = input()
+        return TournamentIdCommand(choice)
+
+    @InputErrorHandler.catch_input_errors
+    def round_menu_add_scores(self, match):
+        (player1, score1), (player2, score2) = match
+        print(f"Joueur 1 : {player1}")
+        print(f"Joueur 2 : {player2}")
+        new_score1 = input("Score du joueur 1 :")
+        new_score2 = input("Score du joueur 2 :")
+        return RoundAddScore(new_score1, new_score2, match)
 
 
 class View:
-
-
     def tournament_start_round(self):
         View.menu_format("Commencer un tour", type='title')
         tournament_id = View.get_input("ID du tournoi :", int) - 1  # TODO revoir les index pour éviter le -1 ?

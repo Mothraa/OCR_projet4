@@ -66,7 +66,7 @@ class GenerateRoundService(Generator):
 
     def create_matchs(self, tournament: model.Tournament) -> None:
 
-        round_number = tournament.get_actual_round_number()
+        round_number = tournament.get_current_round_number()
         tournament.sort_players_by_score()
         temp_round_list = tournament.player_list.copy()
         matchs_list = []

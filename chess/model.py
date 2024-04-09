@@ -54,26 +54,24 @@ class Tournament:
         _id = len(Tournament.tournaments_repertory)
         return _id
 
-    # def default_rounds(self, number_of_rounds):
-    #     if not number_of_rounds:
-    #         rounds = self.DEFAULT_ROUND_NUMBER
-    #     else:
-    #         rounds = number_of_rounds
-    #     return rounds
-
     def get_status(self) -> TournamentStatus:
         return self.status
+
+    def get_player_list(self):
+        return self.player_list
+
+    def get_current_round_number(self):
+        return self.current_round_number
+
+    def get_current_round(self):
+        round_indice = self.get_current_round_number() - 1
+        chess_round = self.rounds_list[round_indice]
+        return chess_round
 
     def add_player_to_tournament(self, player):
         # initialisation du score à 0
         INIT_SCORE = 0.0
         self.player_list.append([player, INIT_SCORE])
-
-    def get_player_list(self):
-        return self.player_list
-
-    def get_actual_round_number(self):
-        return self.current_round_number
 
     def change_status(self, new_status: TournamentStatus):
         actual_status = self.get_status()
@@ -83,6 +81,11 @@ class Tournament:
             raise PermissionError("on ne peut repasser CREATED, un tournoi IN PROGRESS")
         else:
             self.status = new_status
+
+    def add_player_score(self, score: float):
+        # self.player_list.index(self.id)[0]
+        # += score
+        pass
 
     def sort_players_by_score(self):
         # la liste des joueurs contient des éléments de la forme [Player, score]
@@ -121,6 +124,9 @@ class Round:
 
     def calculate_points(self):
         pass
+
+    def get_matchs_list(self):
+        return self.matchs_list
 
     def add_score(self):
         pass
@@ -173,20 +179,29 @@ class Player:
         """Historique des tournois joués"""
         pass
 
-    def save_matchs_history(self, tournament, round, match_result):
-        result = match_result
-        self.matchs_history.extend((tournament.id, round.id, match_result))
+    def save_matchs_history(self, tournament, round, match):
+        # match sous la forme : ([player1, score1], [player2, score2])
+        # TODO a déplacer dans service
+        (player1, score1), (player2, score2) = match
+
+        # on détermine si le joueur est indiqué par player1 ou player2
+        adversaire = player2 if player1 is self else player1
+        score_joueur = score1 if player1 is self else score2
+        score_adversaire = score2 if player1 is self else score1
+
+        # format : liste de tuples => (ID tournoi, round, ID adversaire, score_joueur, score_adversaire)
+        self.matchs_history.append((tournament.id, round.id, adversaire.id, score_joueur, score_adversaire))
 
     def get_matchs_history(self):
         """ Historique des matchs joués :
-            format, liste de tuples => (ID tournoi, round, ID adversaire, score_joueur, score_adversaire, resultat: win, loose, equality)
+            format, liste de tuples => (ID tournoi, round, ID adversaire, score_joueur, score_adversaire)
         """
         list_history = []
         return list_history
 
     def get_matchs_history_by_tournament(self, tournament):
         """ Historique des matchs joués par tournoi :
-            format, liste de tuples => (ID tournoi, round, ID adversaire, score_joueur, score_adversaire, resultat: win, loose, equality)
+            format, liste de tuples => (ID tournoi, round, ID adversaire, score_joueur, score_adversaire)
         """
         full_list = self.get_matchs_history()
         list_history = [x for x in full_list if x[0] == tournament.id]

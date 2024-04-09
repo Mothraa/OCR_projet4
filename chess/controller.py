@@ -137,8 +137,12 @@ class TournamentController():
         elif command.choice == 6:
             self.tournament_menu_start()
         elif command.choice == 7:
-            self.tournament_menu_continue()
+            self.tournament_menu_add_scores()
         elif command.choice == 8:
+            self.tournament_menu_continue()
+        elif command.choice == 9:
+            self.tournament_menu_end()
+        elif command.choice == 10:
             MainController()
 
     def display_tournaments(self):
@@ -175,9 +179,8 @@ class TournamentController():
         self.tournament_menu()
 
     def tournament_add_players(self):
-        command_tournoi = self.view.tournament_add_players_get_tournament_id()
-        command_players = self.view.tournament_add_players_get_players_id()
-        self.add_players_by_ids(command_tournoi.choice, command_players.players_id_list)
+        command = self.view.tournament_add_players()
+        self.add_players_by_ids(command.tournament_id, command.players_id_list)
         # TODO afficher le resultat
         # self.tournament_add_players_display()
         self.tournament_menu()
@@ -189,6 +192,10 @@ class TournamentController():
         self.tour.create_first_round(tournament)
         self.tournament_menu()
 
+    def tournament_menu_add_scores(self):
+        self.tour.add_scores()
+        self.tournament_menu()
+        
     def tournament_init(self, tournament: Tournament):
         tournament.current_round_number = 0
         tournament.change_status(TournamentStatus.IN_PROGRESS)
@@ -238,7 +245,6 @@ class RoundController():
         # ajout du round a l'objet tournoi
         self.tournament_add_round(tournament, chess_round)
 
-
     def create_next_round(self):
         command = self.view.create_round_menu()
         tournament = Tournament.find_by_id(command.choice)
@@ -248,7 +254,7 @@ class RoundController():
         chess_round = self.create_round(tournament)
         # création des matchs
         chess_round.matchs_list = self.create_matchs(tournament)
-        # ajout du round a l'objet tournoi
+        # ajout du round au tournoi
         self.tournament_add_round(tournament, chess_round)
 
     def tournament_add_round(self, tournament: Tournament, chess_round: Round):
@@ -259,14 +265,31 @@ class RoundController():
     def end_round(self, tournament: Tournament):
         # ajout heure de fin du round
         now = datetime.now()
-        round_indice = tournament.get_actual_round_number() - 1
-        round = tournament.rounds_list[round_indice]
+        round = tournament.get_current_round()
+        #TODO ajouter round_update(*args)
         round.end_date = now
 
     def create_matchs(self, tournament: Tournament):
         matchs_list = self.service.create_matchs(tournament)
         return matchs_list
 
+    def add_scores(self):
+        # command qui retourne le tournoi et num du tour
+        command = self.view.round_menu_current_round()
+        tournament = Tournament.find_by_id(command.choice)
+        # on récupère la liste des matchs, pour l'afficher
+        current_round = tournament.get_current_round()
+        new_matchs_list = []
+        for match in current_round.matchs_list:
+            command = self.view.round_menu_add_scores(match)
+            (player1, score1), (player2, score2) = command.match
+            player1.add_player_score(score1)
+            player2.add_player_score(score2)
+            player1.save_matchs_history(tournament, current_round, command.match)
+            player2.save_matchs_history(tournament, current_round, command.match)
+            new_matchs_list.append(command.match)
+            # TODO : ajouter le score au classement du tournoi
+        current_round.matchs_list = new_matchs_list
 
 
     # def generate_scores(self, tournament: Tournament):

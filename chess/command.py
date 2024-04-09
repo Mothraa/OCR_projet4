@@ -109,7 +109,7 @@ class PlayerGenerateCommand:
 
 class TournamentMenuCommand:
     choice = None
-    NB_CHOIX_MAX = 8
+    NB_CHOIX_MAX = 10
 
     def __init__(self, choice):
         # faire hériter de MainMenuCommand ?
@@ -305,7 +305,7 @@ class CreateRoundCommand:
     def check_played_matchs(self):
         tournament = Tournament.find_by_id(self.choice)
         # on vérifie que tous les matchs du tour précédent ont été joués
-        round_indice = tournament.get_actual_round_number() - 1
+        round_indice = tournament.get_current_round_number() - 1
         round = tournament.rounds_list[round_indice]
         for match in round.matchs_list:
             # on regarde les scores des matchs (sous la forme de tuples : (player1, score1)(player2, score2))
@@ -313,6 +313,71 @@ class CreateRoundCommand:
             if match[0][1] == 0.0 and match[1][1] == 0.0:
                 raise ValueError("Les matchs du tournoi / tour indiqué ne sont pas terminés")
 
+
+class TournamentIdCommand:
+    choice = None
+
+    def __init__(self, choice):
+        self.choice = choice
+        self.self_validate()
+        self.clean_up()
+        self.check_not_played_matchs()
+
+    def self_validate(self):
+        if self.choice is None:
+            raise ValueError("Merci d'indiquer une valeur valide")
+        elif not isinstance(int(self.choice), int) or int(self.choice) < 0:
+            raise ValueError("Merci d'indiquer un nombre entier positif")
+
+    def clean_up(self):
+        self.choice = int(self.choice)
+
+    def check_not_played_matchs(self):
+        tournament = Tournament.find_by_id(self.choice)
+        # on vérifie que les matchs du tour n'ont pas été joués
+        round = tournament.get_current_round()
+        for match in round.matchs_list:
+            # on regarde les scores des matchs (sous la forme de tuples : (player1, score1)(player2, score2))
+            # TODO créer une fonction get_match_score (par ex)
+            if match[0][1] != 0.0 and match[1][1] != 0.0:
+                raise ValueError("Les matchs du tournoi / tour indiqué ont déjà été joués")
+
+
+class RoundAddScore:
+    new_score1 = None
+    new_score2 = None
+    match = None
+
+    def __init__(self, new_score1, new_score2, match):
+        self.new_score1 = new_score1
+        self.new_score2 = new_score2
+        self.match = match
+
+        self.self_validate()
+        self.clean_up()
+        self.update_score()
+
+    def self_validate(self):
+        if self.new_score1 is None:
+            raise ValueError("Merci d'indiquer une valeur valide")
+        elif not isinstance(float(self.new_score1), float) or float(self.new_score1) < 0:
+            raise ValueError("Merci d'indiquer un nombre entier positif")
+        # TODO : ajouter la condition différent de 0.0, 0.5, 1.0
+        if self.new_score2 is None:
+            raise ValueError("Merci d'indiquer une valeur valide")
+        elif not isinstance(float(self.new_score2), float) or float(self.new_score2) < 0:
+            raise ValueError("Merci d'indiquer un nombre entier positif")
+        # TODO : ajouter la condition différent de 0.0, 0.5, 1.0
+
+        # TODO : le score ne peut etre que 0-1 ou 0.5-0.5 ou 1-0
+
+    def clean_up(self):
+        self.new_score1 = float(self.new_score1)
+        self.new_score2 = float(self.new_score2)
+
+    def update_score(self):
+        (player1, score1), (player2, score2) = self.match
+        self.match = (player1, self.new_score1), (player2, self.new_score2)
 
 # exemple avec decorateur
     # def validate_input(func):
