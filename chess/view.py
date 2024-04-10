@@ -1,6 +1,3 @@
-
-from chess.model import Tournament, TournamentStatus
-
 import chess.menu_text as text
 from chess.command import (MainMenuCommand,
                            PlayerMenuCommand,
@@ -16,6 +13,7 @@ from chess.command import (MainMenuCommand,
                            CreateRoundCommand,
                            TournamentIdCommand,
                            RoundAddScore,
+                           ReportMenuCommand,
                            )
 
 
@@ -33,7 +31,7 @@ class InputErrorHandler:
 
 class MainView(InputErrorHandler):
     def __init__(self):
-        self.main_menu()
+        pass
 
     def main_menu(self):
         print(text.MAIN_MENU)
@@ -48,11 +46,9 @@ class PlayerView(InputErrorHandler):
     def __init__(self) -> None:
         pass
 
+    @InputErrorHandler.catch_input_errors
     def player_menu(self):
         print(text.PLAYER_MENU)
-
-    @InputErrorHandler.catch_input_errors
-    def get_user_choice(self):
         choice = input()
         return PlayerMenuCommand(choice)
 
@@ -136,7 +132,7 @@ class TournamentView(InputErrorHandler):
         return TournamentAddPlayerCommand(tournament_id, players_id_list)
 
     def tournament_add_players_display(self):
-        #TODO
+        # TODO
         pass
 
     @InputErrorHandler.catch_input_errors
@@ -150,6 +146,7 @@ class TournamentView(InputErrorHandler):
         print(text.TOURNAMENT_END_MENU)
         choice = input()
         return TournamentEndCommand(choice)
+
 
 class RoundView(InputErrorHandler):
     def __init__(self):
@@ -177,33 +174,12 @@ class RoundView(InputErrorHandler):
         return RoundAddScore(new_score1, new_score2, match)
 
 
-class View:
-    def tournament_start_round(self):
-        View.menu_format("Commencer un tour", type='title')
-        tournament_id = View.get_input("ID du tournoi :", int) - 1  # TODO revoir les index pour éviter le -1 ?
+class ReportView(InputErrorHandler):
+    def __init__(self):
+        pass
 
-        if not Tournament.tournament_repertory[tournament_id].status == TournamentStatus.IN_PROGRESS:
-            print("Vous ne pouvez pas commencer un tour sur un tournoi au statut : {}"
-                  .format(Tournament.tournament_repertory[tournament_id].status))
-            self.tournament_play()
-        print("Le tournoi est au tour {}, voulez vous commencer un nouveau tour ?"
-              .format(Tournament.tournament_repertory[tournament_id].current_round_number))
-        # vérifier si le tournoi est ouvert
-        # vérifier si (tous) les matchs du tour précédent ont été joués
-        # demander confirmation a l'utilisateur début round x
-        # créer le round
-        # ajouter une date/heure de début
-        # mettre à jour le numero de round courant dans le tournoi
-        # générer les couples
-        # afficher les couples
-        self.tournament_play()
-
-    def tournament_end_round(self):
-        View.menu_format("Terminer un tour", type='title')
-        tournament_id = View.get_input("ID du tournoi :", int) - 1  # TODO revoir les index pour éviter le -1 ?
-        # vérifier si le tournoi est ouvert
-        # vérifier si un round à été commencé
-        # récupérer l'info du round courant dans le model tournament
-        # demander confirmation a l'utilisateur cloture round x
-        # ajouter les scores par l'utilisateur
-        # ajouter date/heure de fin
+    @InputErrorHandler.catch_input_errors
+    def create_report_menu(self):
+        print(text.REPORT_MENU)
+        choice = input()
+        return ReportMenuCommand(choice)

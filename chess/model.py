@@ -1,22 +1,6 @@
-from enum import Enum  # , IntEnum
 from operator import itemgetter
 
-class ExtendedEnum(Enum):
-    @classmethod
-    def list(cls):
-        return list(map(lambda c: c.value, cls))
-
-
-class TournamentStatus(ExtendedEnum):
-    CREATED = 1
-    IN_PROGRESS = 2
-    TERMINATED = 3
-
-
-class MatchResult(ExtendedEnum):
-    WIN = 1
-    EQUALITY = 2
-    LOOSE = 3
+from chess.utils import TournamentStatus
 
 
 class Tournament:
@@ -85,7 +69,6 @@ class Tournament:
             self.status = new_status
 
     def add_score_in_tournament_ranking(self, score_to_add: float, player):
-
         player_list = self.get_player_list()
         player_index = None
         for index, (p, _) in enumerate(player_list):
@@ -98,11 +81,9 @@ class Tournament:
 
         # TODO : déplacer le set_player_list dans le controller une fois tous les scores modifiés pour limiter les maj
         self.set_player_list(player_list)
-        pass
-
 
     def sort_players_by_score(self):
-        # la liste des joueurs contient des éléments de la forme [Player, score]
+        # la liste des joueurs contient des éléments de la forme (Player, score)
         self.player_list.sort(key=itemgetter(1), reverse=True)
 
     @staticmethod
@@ -136,14 +117,8 @@ class Round:
         """
         pass
 
-    def calculate_points(self):
-        pass
-
     def get_matchs_list(self):
         return self.matchs_list
-
-    def add_score(self):
-        pass
 
 
 class Player:
@@ -163,8 +138,6 @@ class Player:
         self.last_name = player_data.last_name
         self.birthdate = player_data.birthdate
         self.tournaments_history = []
-        # Historique des matchs joués, sous la forme d'une liste de tuples
-        # (ID tournoi, round, ID adversaire, score_joueur, score_adversaire, resultat: win, loose, equality)
         self.matchs_history = []
         Player.players_repertory.append(self)
 
@@ -182,18 +155,19 @@ class Player:
         """Retourne un jouer depuis son ID"""
         return Player.players_repertory[player_id]
 
-    # TODO : je ne peux pas déclarer def add_tournament_from(self, tournament: Tournament): car Tournament pas encore def... comment faire ?
-    def add_tournament_to_player(self, tournament):
+    # TODO : je ne peux pas déclarer def add_tournament_from(self, tournament: Tournament)
+    # car Tournament pas encore def... comment faire ?
+    def add_tournament(self, tournament):
         self.tournaments_history.append(tournament)
 
-    def add_tournament_to_player_by_id(self, tournament_id: int):
-        self.add_tournament_to_player(Tournament.find_by_id(tournament_id))
+    def add_tournament_by_id(self, tournament_id: int):
+        self.add_tournament(Tournament.find_by_id(tournament_id))
 
-    def get_tournament_history(self, tournament):
+    def get_tournament_history(self):
         """Historique des tournois joués"""
-        pass
+        return self.tournaments_history
 
-    def save_matchs_history(self, tournament, round, match):
+    def set_matchs_history(self, tournament, round, match):
         # match sous la forme : ([player1, score1], [player2, score2])
         # TODO a déplacer dans service
         (player1, score1), (player2, score2) = match
@@ -220,15 +194,6 @@ class Player:
         full_list = self.get_matchs_history()
         list_history = [x for x in full_list if x[0] == tournament.id]
         return list_history
-
-    def already_played_with_in_tournament(self, player, tournament):
-        """return True if already played with another player"""
-        matchs_list = self.get_matchs_history_by_tournament(tournament)
-        flag = False
-        for match in matchs_list:
-            if match[2] == player.id:
-                flag = True
-        return flag
 
     def __repr__(self) -> str:
         return "ID {}: {} {}".format(self.id,

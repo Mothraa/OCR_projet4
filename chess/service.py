@@ -1,10 +1,9 @@
 import random
 
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 from faker import Faker
 from chess import model
-# from chess.controller import PlayerController
 
 
 class Generator:
@@ -20,12 +19,10 @@ class GeneratePlayerService(Generator):
         super().__init__()
 
     def generate_player_all_attrs(self):
-
         self.player_attrs.first_name = self.fake.unique.first_name()
         self.player_attrs.last_name = self.fake.unique.last_name()
         self.player_attrs.birthdate = self.fake.unique.date_of_birth(minimum_age=6, maximum_age=99)
         self.player_attrs.national_chess_id = self.fake.unique.bothify(text="??%%%%%").upper()
-
         return self.player_attrs
 
 
@@ -37,10 +34,9 @@ class GenerateTournamentService(Generator):
         super().__init__()
 
     def generate_tournament_all_attrs(self):
-
         DELTA_DATE = 3  # nombre de jours max entre début et fin d'un tournoi
-        NB_ROUND_MIN = 4
-        NB_ROUND_MAX = 8
+        NB_ROUND_MIN = 2
+        NB_ROUND_MAX = 6
 
         location = self.fake.unique.city()
         date_debut = self.fake.unique.date_this_year(before_today=False, after_today=True)
@@ -57,7 +53,6 @@ class GenerateTournamentService(Generator):
         return self.tournament_attrs
 
 
-# Service: Approche 2
 class GenerateRoundService(Generator):
     round_attrs = model.Round
 
@@ -94,7 +89,7 @@ class GenerateRoundService(Generator):
 
                     player2 = temp_round_list[i]
 
-                    if player1[0].already_played_with_in_tournament(player2[0], tournament):
+                    if self.already_played_with_in_tournament(player1[0], player2[0], tournament):
                         i += 1
                     else:
                         player2 = temp_round_list.pop(i)
@@ -106,32 +101,22 @@ class GenerateRoundService(Generator):
 
         return matchs_list
 
+    def already_played_with_in_tournament(self, player1, player2, tournament) -> bool:
+        """return True if already played with another player"""
+        matchs_list = player1.get_matchs_history_by_tournament(tournament)
+        flag = False
+        for match in matchs_list:
+            if match[2] == player2.id:
+                flag = True
+        return flag
 
-class CreatorDeprecated(Generator):
-    def __init__(self) -> None:
-        super().__init__()
 
-    def round(self):
-        pass
-
-    def match(self):
-        pass
+class ReportService():
 
     @staticmethod
-    def score(player1, player2):
-        # scores randomisés et pondérés
-        tirage = random.choices(['first', 'second', 'equal'], weights=(35, 35, 25))[0]
-        if tirage == 'equal':
-            score_player1 = 0.5
-            score_player2 = 0.5
-        elif tirage == 'first':
-            score_player1 = 1
-            score_player2 = 0
-        elif tirage == 'second':
-            score_player1 = 0
-            score_player2 = 1
-
-        return ([player1, score_player1], [player2, score_player2])
+    def sort_players_list_by_name(player_list):
+        player_list_sorted = sorted(player_list,  key=lambda player: player.last_name)
+        return player_list_sorted
 
 
 class SaveAsJSON:

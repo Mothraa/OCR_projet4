@@ -3,28 +3,9 @@ from datetime import date
 from chess.model import Player, Tournament, TournamentStatus
 
 
-# TODO : a dispatch dans les classes des commands
-class InputManagement():
-    def __init__():
-        pass
-
-    @staticmethod
-    def check_dates(self, start_date, end_date):
-        """vérification :
-            - du format date
-            - que la date de début est avant la date de fin
-            - que les dates sont à venir
-        """
-        pass
-
-    @staticmethod
-    def check_chess_id(self):
-        pass
-
-
 class MainMenuCommand:
     choice = None
-    NB_CHOIX_MAX = 3
+    NB_CHOIX_MAX = 4
 
     def __init__(self, choice):
         self.choice = choice
@@ -204,6 +185,7 @@ class TournamentGenerateCommand:
     def clean_up(self):
         self.choice = int(self.choice)
 
+
 class TournamentAddPlayerCommand:
     tournament_id = None
     players_id_list = []
@@ -220,7 +202,7 @@ class TournamentAddPlayerCommand:
             raise ValueError("Merci d'indiquer un nombre")
         elif not isinstance(int(self.tournament_id), int) or int(self.tournament_id) < 0:
             raise ValueError("Merci d'indiquer un nombre entier positif")
-        #TODO vérifier si l'id renvoi bien vers un tournoi
+        # TODO vérifier si l'id renvoi bien vers un tournoi
 
         # on sépare la chaine de caractère
         id_list = self.input_players_list.strip().split(sep=" ")
@@ -421,6 +403,25 @@ class RoundAddScore:
         (player1, score1), (player2, score2) = self.match
         self.match = (player1, self.new_score1), (player2, self.new_score2)
 
+
+class ReportMenuCommand:
+    choice = None
+    NB_CHOIX_MAX = 4
+
+    def __init__(self, choice):
+        self.choice = choice
+        self.self_validate()
+        self.clean_up()
+
+    def self_validate(self):
+        if self.choice is None:
+            raise ValueError("Merci d'indiquer un choix")
+        # TODO tester range(1, NB_CHOIX_MAX)
+        elif not isinstance(int(self.choice), int) or int(self.choice) < 1 or int(self.choice) > self.NB_CHOIX_MAX:
+            raise ValueError(f"Merci d'indiquer un nombre entre 1 et {self.NB_CHOIX_MAX}")
+
+    def clean_up(self):
+        self.choice = int(self.choice)
 # exemple avec decorateur
     # def validate_input(func):
     #     def wrapper(self, *args, **kwargs):

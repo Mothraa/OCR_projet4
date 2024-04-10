@@ -1,13 +1,14 @@
-import random
 from datetime import datetime
+from pprint import pprint
 
 import logging
-from chess.view import MainView, PlayerView, TournamentView, RoundView
+from chess.view import MainView, PlayerView, TournamentView, RoundView, ReportView
 from chess.model import Player, Tournament, Round, TournamentStatus
 from chess.service import (
                         GeneratePlayerService,
                         GenerateTournamentService,
                         GenerateRoundService,
+                        ReportService,
                         )
 
 
@@ -23,37 +24,37 @@ class MainController():
                             format='%(asctime)s - %(levelname)s : %(message)s')  # WARNING
         # pour eviter que faker nous spam de logs
         logging.getLogger('faker').setLevel(logging.ERROR)
-
         self.view = MainView()
+
+    def run(self):
+        self.view.main_menu()
         command = self.view.get_user_choice()
         self.main_menu_select(command)
-
         # logging.warning("whoaa!")
 
-        # self.manage_player = PlayerManagement()
-        # self.manage_tournament = TournamentManagement()
-
     def main_menu_select(self, command):
-        if command.choice == 1:  # MainOption.PLAYER_MENU_OPTION:
+        if command.choice == 1:
             PlayerController()
-        elif command.choice == 2:  # MainOption.TOURNAMENT_MENU_OPTION:
+        elif command.choice == 2:
             TournamentController()
-        elif command.choice == 3:  # MainOption.CLOSE_PROGRAM_OPTION:
-            # ajouter message de départ
-            pass
+        elif command.choice == 3:
+            ReportController()
+        elif command.choice == 4:
+            print("bye !")
 
 
 class PlayerController():
     view = None
     service = None
+    main = None
 
     def __init__(self) -> None:
         self.view = PlayerView()
+        self.main = MainController()
         self.player_menu()
 
     def player_menu(self):
-        self.view.player_menu()
-        command = self.view.get_user_choice()
+        command = self.view.player_menu()
         self.player_menu_select(command)
 
     def player_menu_select(self, command):
@@ -64,7 +65,7 @@ class PlayerController():
         elif command.choice == 3:
             self.players_generate()
         elif command.choice == 4:
-            MainController()
+            self.main.run()
 
     def display_players(self):
         # TODO Player a instancier ?
@@ -97,25 +98,18 @@ class PlayerController():
         # on retourne au menu
         self.player_menu()
 
-    @staticmethod
-    def add_tournament_history(player: Player, tournament: Tournament):
-        player.tournaments_history.append(tournament)
-
-    @staticmethod
-    def add_match_history(player: Player, opponent: Player, result: enumerate):
-        #TODO
-        pass
-
 
 class TournamentController():
     view = None
     tour = None
     service = None
+    main = None
 
     def __init__(self) -> None:
         self.view = TournamentView()
         self.tour = RoundController()
         self.service = GenerateTournamentService()
+        self.main = MainController()
         self.tournament_menu()
 
     def tournament_menu(self):
@@ -143,7 +137,7 @@ class TournamentController():
         elif command.choice == 9:
             self.tournament_menu_end()
         elif command.choice == 10:
-            MainController()
+            self.main.run()
 
     def display_tournaments(self):
         tournaments = Tournament.get_tournaments_repertory()
@@ -152,8 +146,8 @@ class TournamentController():
         self.tournament_menu()
 
     def display_tournament_details(self):
-        command = self.view.tournament_details_get_tournament_id()
-        tournament = Tournament.find_by_id(command.choice)
+        # command = self.view.tournament_details_get_tournament_id()
+        # Tournament.find_by_id(command.choice)
         # TODO 'nécessite de finir la serialisation de l'objet en text / json
         self.tournament_menu()
 
@@ -223,7 +217,7 @@ class TournamentController():
         # on ajoute le joueur a la liste du tournoi
         tournament.add_player_to_tournament(player)
         # on ajoute également le tournoi à la liste de ceux joués par le joueur
-        player.add_tournament_to_player(tournament)
+        player.add_tournament(tournament)
         logging.info("Ajout du joueur [{}] au tournoi [{}]".format(player, tournament))
         # TODO afficher la liste des joueurs ajoutés en confirmation
 
@@ -272,7 +266,7 @@ class RoundController():
         # ajout heure de fin du round
         now = datetime.now()
         round = tournament.get_current_round()
-        #TODO ajouter round_update(*args)
+        # TODO ajouter round_update(*args)
         round.end_date = now
         tournament.sort_players_by_score()
 
@@ -292,20 +286,53 @@ class RoundController():
             (player1, score1), (player2, score2) = command.match
             tournament.add_score_in_tournament_ranking(score1, player1)
             tournament.add_score_in_tournament_ranking(score2, player2)
-            player1.save_matchs_history(tournament, current_round, command.match)
-            player2.save_matchs_history(tournament, current_round, command.match)
+            player1.set_matchs_history(tournament, current_round, command.match)
+            player2.set_matchs_history(tournament, current_round, command.match)
             new_matchs_list.append(command.match)
             # TODO : ajouter le score au classement du tournoi
         current_round.matchs_list = new_matchs_list
 
 
-class MatchController():
+class ReportController():
+    view = None
+    service = None
+    main = None
+
     def __init__(self) -> None:
-        pass
+        self.view = ReportView()
+        self.main = MainController()
+        self.report_menu()
 
-    def create():
-        pass
+    def report_menu(self):
+        command = self.view.create_report_menu()
+        self.report_menu_select(command)
 
-    def check_number_of_players():
-        # a ne faire que sur le round ?
-        pass
+    def report_menu_select(self, command):
+        if command.choice == 1:
+            self.report_all_players()
+        elif command.choice == 2:
+            self.report_all_tournaments()
+        elif command.choice == 3:
+            self.report_tournament_details()
+        elif command.choice == 4:
+            self.main.run()
+
+    def report_all_players(self):
+        # liste de tous les joueurs par ordre alphabétique
+        player_list = Player.get_players_repertory()
+        player_list_sorted = ReportService.sort_players_list_by_name(player_list)
+        pprint(player_list_sorted, indent=4)
+        self.report_menu()
+        # for player in players_list:
+        #     print(player.encode())
+
+    def report_all_tournaments(self):
+        # liste de tous les tournois
+        pprint(Tournament.get_tournaments_repertory(), indent=4)
+        self.report_menu()
+
+    def report_tournament_details(self, tournament: Tournament):
+        # nom et dates d’un tournoi donné
+        # liste des joueurs du tournoi par ordre alphabétique
+        # liste de tous les tours du tournoi et de tous les matchs du tour.
+        self.report_menu()

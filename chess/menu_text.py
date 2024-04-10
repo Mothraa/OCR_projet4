@@ -1,24 +1,12 @@
-from enum import Enum
-
-
-class ExtendedEnum(Enum):
-    @classmethod
-    def list(cls):
-        return list(map(lambda c: c.value, cls))
-
-
-class MainOption(ExtendedEnum):
-    PLAYER_MENU_OPTION = 1
-    TOURNAMENT_MENU_OPTION = 2
-    CLOSE_PROGRAM_OPTION = 3
-
+# MAIN
 
 MAIN_MENU = """
     Application d'échec\n
     Menu principal\n
     1. Gestion joueurs
     2. Gestion Tournois
-    3. Quitter
+    3. Rapports
+    4. Quitter
 """
 
 # PLAYERS
@@ -79,6 +67,8 @@ TOURNAMENT_START_MENU = """**** Débuter un tournoi ****\n
     Indiquer l'ID du tournoi :
     """
 
+# ROUNDS
+
 ROUND_MENU = """**** Ajouter un tour à un tournoi ****\n
     << Attention >> l'ajout d'un tour va cloturer le tour précédent.
     Indiquez l'ID du tournoi auquel vous souhaitez ajouter un tour :
@@ -92,3 +82,13 @@ TOURNAMENT_END_MENU = """**** Terminer un tournoi ****\n
     << Attention >> Tous les tours doivent être terminés pour terminer un tournoi
     Indiquer l'ID du tournoi :
     """
+
+# REPORT
+
+REPORT_MENU = """
+    Menu rapports\n
+    1. liste de tous les joueurs par ordre alphabétique
+    2. liste de tous les tournois
+    3. détails d'un tournoi
+    4. Retour au menu principal
+"""
