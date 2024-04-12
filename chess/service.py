@@ -1,10 +1,12 @@
 import random
-
-from datetime import timedelta
+import json
+from datetime import date, timedelta
 
 from faker import Faker
 from chess import model
 
+from chess.utils import TournamentStatus
+from chess.model import Player, Tournament
 
 class Generator:
     def __init__(self) -> None:
@@ -13,7 +15,9 @@ class Generator:
 
 class GeneratePlayerService(Generator):
     # on récupère la structure du joueur
+    # TODO : passer par des dataclass https://docs.python.org/fr/3/tutorial/classes.html
     player_attrs = model.Player
+
 
     def __init__(self) -> None:
         super().__init__()
@@ -119,15 +123,113 @@ class ReportService():
         return player_list_sorted
 
 
-class SaveAsJSON:
+class JsonService():
+
+    JSON_INDENT = 4
+    PLAYERS_FILE_PATH = ".//data//players.json"
+    # TOURNAMENTS_REPERTORY_PATH = ".//data//tournaments"
+    TOURNAMENTS_FILE_PATH = ".//data//tournaments.json"
+
     def __init__(self):
         pass
-# #     print(toto)
-# #     print(type(toto))
-# #     save = SaveAsJSON()
-# #     save.player(toto)
 
+    @staticmethod
+    def load_data_from_json(json_file_path):
+        with open(json_file_path, "r") as f:
+            data = json.load(f)
+            return data
 
-class ReadFromJSON:
-    def __init__(self):
+    @staticmethod
+    def save_data_to_json(data, json_file_path):
+        with open(json_file_path, "w") as f:
+            json.dump(data, f, ensure_ascii=False, indent=JsonService.JSON_INDENT)
+            #lambda x: x.value
+
+    @classmethod
+    def add_player_as_json(cls, player: Player):
+
+        player_dict = cls.convert_player_to_dict(player)
+        data = cls.load_data_from_json(cls.PLAYERS_FILE_PATH)
+
+        # Vérifier si les données à ajouter sont déjà présentes
+        for item in data:
+            # dans le cas ou le joueur est déjà présent
+            if all(item[key] == player_dict[key] for key in player_dict):
+                return
+            # dans le cas de deux joueurs avec le même ID (mais des attributs différents)
+            if item['id'] == player_dict['id']:
+                print("Un joueur avec le même ID existe déjà.")
+                return
+
+        data.append(player_dict)
+        cls.save_data_to_json(data, cls.PLAYERS_FILE_PATH)
+
+    @classmethod
+    def add_tournament_as_json(cls, tournament: Tournament):
+
+        tournament_dict = cls.convert_tournament_to_dict(tournament)
+        data = cls.load_data_from_json(cls.TOURNAMENTS_FILE_PATH)
+
+        # Vérifier si les données à ajouter sont déjà présentes
+        for item in data:
+            # dans le cas ou le joueur est déjà présent
+            if all(item[key] == tournament_dict[key] for key in tournament_dict):
+                return
+            # dans le cas de deux joueurs avec le même ID (mais des attributs différents)
+            if item['id'] == tournament_dict['id']:
+                print("Un tournoi avec le même ID existe déjà.")
+                return
+
+        data.append(tournament_dict)
+        cls.save_data_to_json(data, cls.TOURNAMENTS_FILE_PATH)
+
+    @classmethod
+    def update_player_as_json(cls, player_to_update):
+        pass
+
+    @classmethod
+    def update_tournament_as_json(cls, tournament_to_update):
+        pass
+
+    def get_players_from_json(self):
+        pass
+
+    def get_tournaments_from_json(self):
+        pass
+
+    @staticmethod
+    def convert_attr_to_str(obj):
+        if isinstance(obj, date):
+            return obj.isoformat()
+        elif isinstance(obj, TournamentStatus):
+            return obj.name
+        else:
+            return obj
+
+    # Conversion de l'objet Player en dictionnaire récursivement pour les listes imbriquées
+    @classmethod
+    def convert_player_to_dict(cls, obj):
+        if isinstance(obj, Player):
+            return {key: cls.convert_attr_to_str(value) for key, value in obj.__dict__.items()
+                    if key != "players_repertory"}
+        elif isinstance(obj, list):
+            return [cls.convert_player_to_dict(item) for item in obj]
+        else:
+            return obj
+
+    # Conversion de l'objet Player en dictionnaire récursivement pour les listes imbriquées
+    @classmethod
+    def convert_tournament_to_dict(cls, obj):
+        if isinstance(obj, Tournament):
+            return {key: cls.convert_attr_to_str(value) for key, value in obj.__dict__.items()
+                    if key != "tournaments_repertory"}
+        elif isinstance(obj, list):
+            return [cls.convert_tournament_to_dict(item) for item in obj]
+        else:
+            return obj
+        
+    def load_json(self):
+        # Mappage du statut pour le remettre de type enum
+        for item in data:
+            item["status"] = TournamentStatus[item["status"]]
         pass

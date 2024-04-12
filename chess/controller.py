@@ -9,6 +9,7 @@ from chess.service import (
                         GenerateTournamentService,
                         GenerateRoundService,
                         ReportService,
+                        JsonService,
                         )
 
 
@@ -47,10 +48,12 @@ class PlayerController():
     view = None
     service = None
     main = None
+    json_manage = None
 
     def __init__(self) -> None:
         self.view = PlayerView()
         self.main = MainController()
+        self.json_manage = JsonService()
         self.player_menu()
 
     def player_menu(self):
@@ -82,8 +85,8 @@ class PlayerController():
 
     def player_create(self, command):
         player = Player(command)
+        self.json_manage.add_player_as_json(player)
         logging.info("création du joueur >> " + str(player))
-        return player
 
     def players_generate(self):
         command = self.view.player_generate_menu()
@@ -104,12 +107,14 @@ class TournamentController():
     tour = None
     service = None
     main = None
+    json_manage = None
 
     def __init__(self) -> None:
         self.view = TournamentView()
         self.tour = RoundController()
         self.service = GenerateTournamentService()
         self.main = MainController()
+        self.json_manage = JsonService()
         self.tournament_menu()
 
     def tournament_menu(self):
@@ -159,6 +164,7 @@ class TournamentController():
 
     def tournament_create(self, command):
         tournament = Tournament(command)
+        self.json_manage.add_tournament_as_json(tournament)
         logging.info("création d'un tournoi >> " + str(tournament))
         return tournament
 
@@ -169,14 +175,13 @@ class TournamentController():
             command_tournament = self.service.generate_tournament_all_attrs()
             # trier par date de début avant création ?
             tournoi = self.tournament_create(command_tournament)
-            print(f"Génération du tournoi >> {tournoi}")
         self.tournament_menu()
 
     def tournament_add_players(self):
         command = self.view.tournament_add_players()
         self.add_players_by_ids(command.tournament_id, command.players_id_list)
         # TODO afficher le resultat
-        # self.tournament_add_players_display()
+        self.json_manage.update_tournament_as_json
         self.tournament_menu()
 
     def tournament_menu_start(self):

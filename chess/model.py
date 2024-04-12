@@ -18,19 +18,23 @@ class Tournament:
     player_list = None
     tournaments_repertory = []
 
-    def __init__(self,  player_data):
-
+    def __init__(self,  tournament_data):
+        # condition pour gérer le cas de l'import JSON ou l'on ne régénère pas les ID :
+        if tournament_data.id is not None:
+            self.id = tournament_data.id
+        else:
+            self.id = self.__create_id()
         self.id = self.__create_id()
-        self.name = player_data.name
-        self.location = player_data.location
+        self.name = tournament_data.name
+        self.location = tournament_data.location
         self.status = TournamentStatus.CREATED
-        self.start_date = player_data.start_date
-        self.end_date = player_data.end_date
-        self.description = player_data.description
-        self.number_of_rounds = player_data.number_of_rounds
+        self.start_date = tournament_data.start_date
+        self.end_date = tournament_data.end_date
+        self.description = tournament_data.description
+        self.number_of_rounds = tournament_data.number_of_rounds
         self.current_round_number = 0
-        self.rounds_list = []
-        self.player_list = []
+        self.rounds_list = tournament_data.rounds_list
+        self.player_list = tournament_data.player_list
 
         Tournament.tournaments_repertory.append(self)
 
@@ -132,7 +136,11 @@ class Player:
     players_repertory = []
 
     def __init__(self, player_data):
-        self.id = self.__create_id()
+        # condition pour gérer le cas de l'import JSON ou l'on ne régénère pas les ID :
+        if player_data.id is not None:
+            self.id = player_data.id
+        else:
+            self.id = self.__create_id()
         self.national_chess_id = player_data.national_chess_id
         self.first_name = player_data.first_name
         self.last_name = player_data.last_name
@@ -142,8 +150,8 @@ class Player:
         Player.players_repertory.append(self)
 
     def __create_id(self):
-        _id = len(Player.players_repertory)
-        return _id
+        id = len(Player.players_repertory)
+        return id
 
     @staticmethod
     def get_players_repertory():
