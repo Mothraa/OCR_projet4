@@ -1,12 +1,14 @@
 import random
 import json
+import os
 from datetime import date, timedelta
 
 from faker import Faker
 from chess import model
 
 from chess.utils import TournamentStatus
-from chess.model import Player, Tournament
+from chess.model import Player, Tournament, Round
+
 
 class Generator:
     def __init__(self) -> None:
@@ -17,7 +19,6 @@ class GeneratePlayerService(Generator):
     # on récupère la structure du joueur
     # TODO : passer par des dataclass https://docs.python.org/fr/3/tutorial/classes.html
     player_attrs = model.Player
-
 
     def __init__(self) -> None:
         super().__init__()
@@ -105,12 +106,13 @@ class GenerateRoundService(Generator):
 
         return matchs_list
 
-    def already_played_with_in_tournament(self, player1, player2, tournament) -> bool:
+    def already_played_with_in_tournament(self, player1_id, player2_id, tournament) -> bool:
         """return True if already played with another player"""
+        player1 = Player.find_by_id(player1_id)
         matchs_list = player1.get_matchs_history_by_tournament(tournament)
         flag = False
         for match in matchs_list:
-            if match[2] == player2.id:
+            if match[2] == player2_id:
                 flag = True
         return flag
 
@@ -131,7 +133,13 @@ class JsonService():
     TOURNAMENTS_FILE_PATH = ".//data//tournaments.json"
 
     def __init__(self):
-        pass
+        # Crée les fichiers JSON vide si ils n'existent pas
+        if not os.path.exists(self.PLAYERS_FILE_PATH):
+            with open(self.PLAYERS_FILE_PATH, "w") as f:
+                json.dump([], f)
+        if not os.path.exists(self.TOURNAMENTS_FILE_PATH):
+            with open(self.TOURNAMENTS_FILE_PATH, "w") as f:
+                json.dump([], f)
 
     @staticmethod
     def load_data_from_json(json_file_path):
@@ -143,7 +151,18 @@ class JsonService():
     def save_data_to_json(data, json_file_path):
         with open(json_file_path, "w") as f:
             json.dump(data, f, ensure_ascii=False, indent=JsonService.JSON_INDENT)
-            #lambda x: x.value
+            # lambda x: x.value
+
+    @classmethod
+    def check_existing_player(cls, data, player_dict):
+        for item in data:
+            # Vérifier si le tournoi est déjà présent
+            if all(item[key] == player_dict[key] for key in player_dict):
+                return
+            # Vérifier si un tournoi avec le même ID existe déjà
+            if item['id'] == player_dict['id']:
+                print("Un joueur  avec le même ID existe déjà.")
+                return
 
     @classmethod
     def add_player_as_json(cls, player: Player):
@@ -151,18 +170,23 @@ class JsonService():
         player_dict = cls.convert_player_to_dict(player)
         data = cls.load_data_from_json(cls.PLAYERS_FILE_PATH)
 
-        # Vérifier si les données à ajouter sont déjà présentes
-        for item in data:
-            # dans le cas ou le joueur est déjà présent
-            if all(item[key] == player_dict[key] for key in player_dict):
-                return
-            # dans le cas de deux joueurs avec le même ID (mais des attributs différents)
-            if item['id'] == player_dict['id']:
-                print("Un joueur avec le même ID existe déjà.")
-                return
+        # Vérifier si les données à ajouter sont déjà présentes dans le fichier json
+        # TODO retourner un bool
+        cls.check_existing_player(data, player_dict)
 
         data.append(player_dict)
         cls.save_data_to_json(data, cls.PLAYERS_FILE_PATH)
+
+    @classmethod
+    def check_existing_tournament(cls, data, tournament_dict):
+        for item in data:
+            # Vérifier si le tournoi est déjà présent
+            if all(item[key] == tournament_dict[key] for key in tournament_dict):
+                return
+            # Vérifier si un tournoi avec le même ID existe déjà
+            if item['id'] == tournament_dict['id']:
+                print("Un tournoi avec le même ID existe déjà.")
+                return
 
     @classmethod
     def add_tournament_as_json(cls, tournament: Tournament):
@@ -170,32 +194,46 @@ class JsonService():
         tournament_dict = cls.convert_tournament_to_dict(tournament)
         data = cls.load_data_from_json(cls.TOURNAMENTS_FILE_PATH)
 
-        # Vérifier si les données à ajouter sont déjà présentes
-        for item in data:
-            # dans le cas ou le joueur est déjà présent
-            if all(item[key] == tournament_dict[key] for key in tournament_dict):
-                return
-            # dans le cas de deux joueurs avec le même ID (mais des attributs différents)
-            if item['id'] == tournament_dict['id']:
-                print("Un tournoi avec le même ID existe déjà.")
-                return
+        # Vérifier si les données à ajouter sont déjà présentes dans le fichier json
+        # TODO retourner un bool
+        cls.check_existing_tournament(data, tournament_dict)
 
         data.append(tournament_dict)
         cls.save_data_to_json(data, cls.TOURNAMENTS_FILE_PATH)
 
     @classmethod
     def update_player_as_json(cls, player_to_update):
-        pass
+        player_dict = cls.convert_player_to_dict(player_to_update)
+        data = cls.load_data_from_json(cls.PLAYERS_FILE_PATH)
+        # mise à jour des données du joueur
+        for item in data:
+            if item['id'] == player_dict['id']:
+                # Update player's data in the list
+                item.update(player_dict)
+                break
+        # enregistrement des données en json
+        cls.save_data_to_json(data, cls.PLAYERS_FILE_PATH)
 
     @classmethod
     def update_tournament_as_json(cls, tournament_to_update):
-        pass
+        tournament_dict = cls.convert_tournament_to_dict(tournament_to_update)
+        data = cls.load_data_from_json(cls.TOURNAMENTS_FILE_PATH)
+        # mise à jour des données du joueur
+        for item in data:
+            if item['id'] == tournament_dict['id']:
+                # Update player's data in the list
+                item.update(tournament_dict)
+                break
+        # enregistrement des données en json
+        cls.save_data_to_json(data, cls.TOURNAMENTS_FILE_PATH)
 
     def get_players_from_json(self):
-        pass
+        # TODO
+        return Player
 
     def get_tournaments_from_json(self):
-        pass
+        # TODO
+        return Tournament
 
     @staticmethod
     def convert_attr_to_str(obj):
@@ -203,6 +241,8 @@ class JsonService():
             return obj.isoformat()
         elif isinstance(obj, TournamentStatus):
             return obj.name
+        # elif isinstance(obj, Round):
+        #     return obj.__dict__()
         else:
             return obj
 
@@ -217,19 +257,52 @@ class JsonService():
         else:
             return obj
 
-    # Conversion de l'objet Player en dictionnaire récursivement pour les listes imbriquées
+    # Conversion de l'objet Tournament en dictionnaire récursivement pour les listes imbriquées
     @classmethod
     def convert_tournament_to_dict(cls, obj):
         if isinstance(obj, Tournament):
-            return {key: cls.convert_attr_to_str(value) for key, value in obj.__dict__.items()
-                    if key != "tournaments_repertory"}
+            tournament_dict = {key: cls.convert_attr_to_str(value) for key, value in obj.__dict__.items()
+                            if key != "tournaments_repertory"}
+
+            # Conversion de la liste de rounds en dictionnaire
+            if obj.rounds_list:
+                tournament_dict['rounds_list'] = [cls.convert_tournament_to_dict(round_item) for round_item in obj.rounds_list]
+            return tournament_dict
+        elif isinstance(obj, Round):
+            round_dict = {key: cls.convert_attr_to_str(value) for key, value in obj.__dict__.items()}
+            return round_dict
+
+        elif isinstance(obj, Player):
+            return obj.id
         elif isinstance(obj, list):
             return [cls.convert_tournament_to_dict(item) for item in obj]
         else:
             return obj
-        
-    def load_json(self):
+
+    @staticmethod
+    def load_tournaments_from_json(file_path):
         # Mappage du statut pour le remettre de type enum
+        # TODO
         for item in data:
             item["status"] = TournamentStatus[item["status"]]
+        pass
+
+    @staticmethod
+    def load_players_from_json(file_path):
+        with open(file_path, 'r') as f:
+            data = json.load(f)
+  
+        players = []
+        for player_data in data:
+            # TODO : conversion str to date
+            player = Player(player_data)
+            players.append(player)
+
+        return players
+
+    @classmethod
+    def load_data_from_json(cls):
+        players = cls.load_players_from_json(cls.PLAYERS_FILE_PATH)
+        print("chargement de {} joueurs".format(len(players)))
+        # tournaments = cls.load_tournaments_from_json(cls.TOURNAMENTS_FILE_PATH)
         pass

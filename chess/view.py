@@ -165,8 +165,8 @@ class RoundView(InputErrorHandler):
         return TournamentIdCommand(choice)
 
     @InputErrorHandler.catch_input_errors
-    def round_menu_add_scores(self, match):
-        (player1, score1), (player2, score2) = match
+    def round_menu_add_scores(self, player1, player2, match):
+#        (player1_id, _), (player2_id, _) = match
         print(f"Joueur 1 : {player1}")
         print(f"Joueur 2 : {player2}")
         new_score1 = input("Score du joueur 1 :")

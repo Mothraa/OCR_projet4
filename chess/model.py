@@ -14,16 +14,16 @@ class Tournament:
     description = None
     number_of_rounds = None
     current_round_number = None
-    rounds_list = None
-    player_list = None
+    rounds_list = []
+    player_list = []
     tournaments_repertory = []
 
     def __init__(self,  tournament_data):
         # condition pour gérer le cas de l'import JSON ou l'on ne régénère pas les ID :
-        if tournament_data.id is not None:
-            self.id = tournament_data.id
-        else:
+        if tournament_data.id is None:
             self.id = self.__create_id()
+        else:
+            self.id = tournament_data.id
         self.id = self.__create_id()
         self.name = tournament_data.name
         self.location = tournament_data.location
@@ -61,7 +61,8 @@ class Tournament:
 
     def add_player_to_tournament(self, player):
         INIT_SCORE = 0.0
-        self.player_list.append((player, INIT_SCORE))
+        # TODO : on enregistre que l'id du joueur pour régler un pb de serialisation json
+        self.player_list.append((player.id, INIT_SCORE))
 
     def change_status(self, new_status: TournamentStatus):
         actual_status = self.get_status()
@@ -72,16 +73,16 @@ class Tournament:
         else:
             self.status = new_status
 
-    def add_score_in_tournament_ranking(self, score_to_add: float, player):
+    def add_score_in_tournament_ranking(self, score_to_add: float, player_id):
         player_list = self.get_player_list()
         player_index = None
-        for index, (p, _) in enumerate(player_list):
-            if p.id == player.id:
+        for index, (p_id, _) in enumerate(player_list):
+            if p_id == player_id:
                 player_index = index
                 break
         (_, score) = player_list[player_index]
         new_score = score + score_to_add
-        self.player_list[player_index] = (player, new_score)
+        self.player_list[player_index] = (player_id, new_score)
 
         # TODO : déplacer le set_player_list dans le controller une fois tous les scores modifiés pour limiter les maj
         self.set_player_list(player_list)
@@ -106,6 +107,19 @@ class Tournament:
                                                             self.number_of_rounds,
                                                             )
 
+    # Méthode pour sérialiser l'objet en un dictionnaire
+    def encode(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+            "location": self.location,
+            "start_date": self.start_date,
+            "end_date": self.end_date,
+            "number_of_rounds": self.number_of_rounds,
+            "description": self.description,
+            "rounds_list": [round.__dict__() for round in self.rounds_list]  # Serialisation d'objets imbriqués
+        }
+
 
 class Round:
     def __init__(self, **kwargs):
@@ -119,11 +133,21 @@ class Round:
         """ format des matchs :
         ([player1, score_player1], [player2, score_player2])
         """
+        # TODO
         pass
 
     def get_matchs_list(self):
         return self.matchs_list
 
+    # pour la sérialisation
+    # def __dict__(self):
+    #     return {
+    #         "id": self.id,
+    #         "round_name": self.round_name,
+    #         "start_date": self.start_date,
+    #         "end_date": self.end_date,
+    #         "matchs_list": [match.__dict__() for match in self.matchs_list]
+        # }
 
 class Player:
     id = None
@@ -131,22 +155,22 @@ class Player:
     first_name = None
     last_name = None
     birthdate = None
-    tournaments_history = None
-    matchs_history = None
+    tournaments_history = []
+    matchs_history = []
     players_repertory = []
 
-    def __init__(self, player_data):
+    def __init__(self, player_data: dict):
         # condition pour gérer le cas de l'import JSON ou l'on ne régénère pas les ID :
-        if player_data.id is not None:
-            self.id = player_data.id
-        else:
+        if player_data.get('id') is None:
             self.id = self.__create_id()
-        self.national_chess_id = player_data.national_chess_id
-        self.first_name = player_data.first_name
-        self.last_name = player_data.last_name
-        self.birthdate = player_data.birthdate
-        self.tournaments_history = []
-        self.matchs_history = []
+        else:
+            self.id = player_data['id']
+        self.national_chess_id = player_data.get('national_chess_id')
+        self.first_name = player_data.get('first_name')
+        self.last_name = player_data.get('last_name')
+        self.birthdate = player_data.get('birthdate')
+        self.tournaments_history = player_data.get('tournaments_history')
+        self.matchs_history = player_data.get('matchs_history')
         Player.players_repertory.append(self)
 
     def __create_id(self):
@@ -166,10 +190,11 @@ class Player:
     # TODO : je ne peux pas déclarer def add_tournament_from(self, tournament: Tournament)
     # car Tournament pas encore def... comment faire ?
     def add_tournament(self, tournament):
-        self.tournaments_history.append(tournament)
+        # TODO : on ajoute l'ID de tournament plutot que le tournoi pour régler le pb de serialisation
+        self.tournaments_history.append(tournament.id)
 
-    def add_tournament_by_id(self, tournament_id: int):
-        self.add_tournament(Tournament.find_by_id(tournament_id))
+    # def add_tournament_by_id(self, tournament_id: int):
+    #     self.add_tournament(Tournament.find_by_id(tournament_id))
 
     def get_tournament_history(self):
         """Historique des tournois joués"""

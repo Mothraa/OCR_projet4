@@ -43,6 +43,7 @@ class PlayerMenuCommand:
 
 
 class PlayerCreateCommand:
+    id = None
     national_chess_id = None
     first_name = None
     last_name = None
@@ -50,12 +51,14 @@ class PlayerCreateCommand:
 
     def __init__(self, **kwargs):
         # self.national_chess_id = kwargs.get("national_chess_id")
+        self.id = None # généré par le modèle
         self.first_name = kwargs.get("first_name")
         self.last_name = kwargs.get("last_name")
         self.birthdate = kwargs.get("birthdate")
 
         self.self_validate()
         self.clean_up()
+        self.to_dict()
 
     def self_validate(self):
         if self.first_name is None:
@@ -67,6 +70,15 @@ class PlayerCreateCommand:
 
     def clean_up(self):
         self.birthdate = date.fromisoformat(self.birthdate)
+    
+    # TODO retourner également un dict pour les tournois
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "first_name": self.first_name,
+            "last_name": self.last_name,
+            "birthdate": self.birthdate
+        }
 
 
 class PlayerGenerateCommand:
@@ -129,7 +141,7 @@ class TournamentDetailCommand:
 
 class TournamentCreateCommand:
     DEFAULT_ROUND_NUMBER = 4
-
+    id = None
     name = None
     location = None
     start_date = None
@@ -138,6 +150,7 @@ class TournamentCreateCommand:
     description = None
 
     def __init__(self, **kwargs):
+        self.id = None  # généré par le modèle
         self.name = kwargs.get("name")
         self.location = kwargs.get("location")
         self.start_date = kwargs.get("start_date")

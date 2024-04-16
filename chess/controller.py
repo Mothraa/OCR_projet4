@@ -15,6 +15,7 @@ from chess.service import (
 
 class MainController():
     view = None
+    json_service = None
 
     def __init__(self) -> None:
         # logging a passer en singleton pour pouvoir l'appeler partout ?
@@ -28,10 +29,15 @@ class MainController():
         self.view = MainView()
 
     def run(self):
+        self.json_service = JsonService()
+        self.json_service.load_data_from_json()
+
         self.view.main_menu()
         command = self.view.get_user_choice()
         self.main_menu_select(command)
         # logging.warning("whoaa!")
+        # init json
+
 
     def main_menu_select(self, command):
         if command.choice == 1:
@@ -174,14 +180,16 @@ class TournamentController():
         for _ in range(command.choice):
             command_tournament = self.service.generate_tournament_all_attrs()
             # trier par date de début avant création ?
-            tournoi = self.tournament_create(command_tournament)
+            self.tournament_create(command_tournament)
         self.tournament_menu()
 
     def tournament_add_players(self):
         command = self.view.tournament_add_players()
         self.add_players_by_ids(command.tournament_id, command.players_id_list)
         # TODO afficher le resultat
-        self.json_manage.update_tournament_as_json
+        tournament = Tournament.find_by_id(command.tournament_id)
+        self.json_manage.update_tournament_as_json(tournament)
+       
         self.tournament_menu()
 
     def tournament_menu_start(self):
@@ -189,10 +197,12 @@ class TournamentController():
         tournament = Tournament.find_by_id(command.choice)
         self.tournament_init(tournament)
         self.tour.create_first_round(tournament)
+        self.json_manage.update_tournament_as_json(tournament)
         self.tournament_menu()
 
     def tournament_menu_add_scores(self):
-        self.tour.add_scores()
+        tournament = self.tour.add_scores()
+        self.json_manage.update_tournament_as_json(tournament)
         self.tournament_menu()
 
     def tournament_init(self, tournament: Tournament):
@@ -200,13 +210,15 @@ class TournamentController():
         tournament.change_status(TournamentStatus.IN_PROGRESS)
 
     def tournament_menu_continue(self):
-        self.tour.create_next_round()
+        tournament = self.tour.create_next_round()
+        self.json_manage.update_tournament_as_json(tournament)
         self.tournament_menu()
 
     def tournament_menu_end(self):
         command = self.view.tournament_menu_end()
         tournament = Tournament.find_by_id(command.choice)
         tournament.change_status(TournamentStatus.TERMINATED)
+        self.json_manage.update_tournament_as_json(tournament)
         print("Le tournoi {} est terminé, félicitation à tous les participants !".format(tournament))
 
     def add_players_by_ids(self, tournament_id: int, player_list: list[int]):
@@ -217,6 +229,7 @@ class TournamentController():
         tournament = Tournament.find_by_id(tournament_id)
         player = Player.find_by_id(player_id)
         self.add_player(tournament, player)
+        self.json_manage.update_player_as_json(player)
 
     def add_player(self, tournament: Tournament, player: Player):
         # on ajoute le joueur a la liste du tournoi
@@ -245,9 +258,11 @@ class RoundController():
     def create_first_round(self, tournament: Tournament):
         # on génère un tour
         chess_round = self.create_round(tournament)
+        # print(chess_round.__dict__())
         # création des matchs
         chess_round.matchs_list = self.create_matchs(tournament)
         # ajout du round a l'objet tournoi
+        # print(chess_round.__dict__())
         self.tournament_add_round(tournament, chess_round)
 
     def create_next_round(self):
@@ -261,6 +276,7 @@ class RoundController():
         chess_round.matchs_list = self.create_matchs(tournament)
         # ajout du round au tournoi
         self.tournament_add_round(tournament, chess_round)
+        return tournament
 
     def tournament_add_round(self, tournament: Tournament, chess_round: Round):
         tournament.rounds_list.append(chess_round)
@@ -280,6 +296,7 @@ class RoundController():
         return matchs_list
 
     def add_scores(self):
+        # TODO : gérer l'erreur si on souhaite ajouter les scores sans avoir commencé le tournoi
         # command qui retourne le tournoi et num du tour
         command = self.view.round_menu_current_round()
         tournament = Tournament.find_by_id(command.choice)
@@ -287,15 +304,22 @@ class RoundController():
         current_round = tournament.get_current_round()
         new_matchs_list = []
         for match in current_round.matchs_list:
-            command = self.view.round_menu_add_scores(match)
-            (player1, score1), (player2, score2) = command.match
-            tournament.add_score_in_tournament_ranking(score1, player1)
-            tournament.add_score_in_tournament_ranking(score2, player2)
+            # TODO a revoir
+            (player1_id, _), (player2_id, _) = match
+            player1 = Player.find_by_id(player1_id)
+            player2 = Player.find_by_id(player2_id)
+            # TODO regrouper player1, 2 dans match ?
+            command = self.view.round_menu_add_scores(player1, player2, match)
+            (player1_id, score1), (player2_id, score2) = command.match
+            tournament.add_score_in_tournament_ranking(score1, player1_id)
+            tournament.add_score_in_tournament_ranking(score2, player2_id)
+
             player1.set_matchs_history(tournament, current_round, command.match)
             player2.set_matchs_history(tournament, current_round, command.match)
             new_matchs_list.append(command.match)
             # TODO : ajouter le score au classement du tournoi
         current_round.matchs_list = new_matchs_list
+        return tournament
 
 
 class ReportController():
