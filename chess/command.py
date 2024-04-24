@@ -170,7 +170,7 @@ class TournamentCreateCommand:
             raise ValueError("Merci d'indiquer une date au format AAAA-MM-JJ")
         elif (self.end_date is None) or (type(date.fromisoformat(self.end_date)) is not date):
             raise ValueError("Merci d'indiquer une date au format AAAA-MM-JJ")
-        elif self.number_of_rounds == "":
+        elif self.number_of_rounds == "":  # TODO ou None ? a tester
             self.number_of_rounds = self.DEFAULT_ROUND_NUMBER
         elif type(self.number_of_rounds) is not int:
             raise ValueError("Merci d'indiquer un nombre de tours")
@@ -435,6 +435,31 @@ class ReportMenuCommand:
 
     def clean_up(self):
         self.choice = int(self.choice)
+
+
+class ReportTournamentDetailsCommand:
+    choice = None
+
+    def __init__(self, choice):
+        self.choice = choice
+        self.self_validate()
+        self.clean_up()
+        self.check_valid_tournament()
+
+    def self_validate(self):
+        if self.choice is None:
+            raise ValueError("Merci d'indiquer une valeur valide")
+        elif not isinstance(int(self.choice), int) or int(self.choice) < 0:
+            raise ValueError("Merci d'indiquer un nombre entier positif")
+
+    def clean_up(self):
+        self.choice = int(self.choice)
+
+    def check_valid_tournament(self):
+        tournament = Tournament.find_by_id(self.choice)
+        if tournament is None:
+            raise ValueError("Aucun tournoi avec cet ID")
+
 # exemple avec decorateur
     # def validate_input(func):
     #     def wrapper(self, *args, **kwargs):

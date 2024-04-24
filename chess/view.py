@@ -14,6 +14,7 @@ from chess.command import (MainMenuCommand,
                            TournamentIdCommand,
                            RoundAddScore,
                            ReportMenuCommand,
+                           ReportTournamentDetailsCommand,
                            )
 
 
@@ -108,14 +109,23 @@ class TournamentView(InputErrorHandler):
         number_of_rounds = input("Saisir le nombre de tours (4 par défaut):")
         description = input("Saisir la description (facultatif) :")
 
-        command = TournamentCreateCommand(name=name,
-                                          location=location,
-                                          start_date=start_date,
-                                          end_date=end_date,
-                                          number_of_rounds=number_of_rounds,
-                                          description=description,
-                                          )
-        return command
+        tournament_data = {
+            "name": name,
+            "location": location,
+            "start_date": start_date,
+            "end_date": end_date,
+            "number_of_rounds": number_of_rounds,
+            "description": description
+        }
+        
+        # command = TournamentCreateCommand(name=name,
+        #                                   location=location,
+        #                                   start_date=start_date,
+        #                                   end_date=end_date,
+        #                                   number_of_rounds=number_of_rounds,
+        #                                   description=description,
+        #                                   )
+        return TournamentCreateCommand(**tournament_data)
 
     @InputErrorHandler.catch_input_errors
     def tournament_generate_menu(self):
@@ -183,3 +193,8 @@ class ReportView(InputErrorHandler):
         print(text.REPORT_MENU)
         choice = input()
         return ReportMenuCommand(choice)
+
+    def report_tournament_details(self):
+        print(text.REPORT_TOURNAMENT_DETAILS)
+        choice = input()
+        return ReportTournamentDetailsCommand(choice)

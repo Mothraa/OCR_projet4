@@ -92,3 +92,7 @@ REPORT_MENU = """
     3. détails d'un tournoi
     4. Retour au menu principal
 """
+
+REPORT_TOURNAMENT_DETAILS = """**** Détails d'un tournoi ****\n
+    Indiquez l'ID du tournoi :
+    """

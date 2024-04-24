@@ -22,22 +22,22 @@ class JsonTest():
 
         # json.JSONEncoder.default = datetime_handler
 
-        player_service = GeneratePlayerService()
-        player_controller = PlayerController()
-        tournament_controller = TournamentController()
-        tournmament_service = GenerateTournamentService()
-        json_instance = JsonManagement()
+        # player_service = GeneratePlayerService()
+        # player_controller = PlayerController()
+        # tournament_controller = TournamentController()
+        # tournmament_service = GenerateTournamentService()
+        # json_instance = JsonManagement()
 
-        command_player = player_service.generate_player_all_attrs()
-        joueur = player_controller.player_create(command_player)
-        # print(type(joueur_convert))
-        # print(joueur_convert)
-        json_instance.save_player_as_json(joueur)
+        # command_player = player_service.generate_player_all_attrs()
+        # joueur = player_controller.player_create(command_player)
+        # # print(type(joueur_convert))
+        # # print(joueur_convert)
+        # json_instance.save_player_as_json(joueur)
 
-        command_tournament = tournmament_service.generate_tournament_all_attrs()
-        tournoi = tournament_controller.tournament_create(command_tournament)
+        # command_tournament = tournmament_service.generate_tournament_all_attrs()
+        # tournoi = tournament_controller.tournament_create(command_tournament)
 
-        json_instance.save_tournament_as_json(tournoi)
+        # json_instance.save_tournament_as_json(tournoi)
         # # Enregistrer l'objet principal dans un fichier JSON
         # chemin_fichier_json_principal = "joueur_principal.json"
         # with open(chemin_fichier_json_principal, "w") as fichier_json_principal:
