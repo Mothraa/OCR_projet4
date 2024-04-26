@@ -1,7 +1,7 @@
 # MAIN
 
 MAIN_MENU = """
-    Application d'échec\n
+    **** Application d'échec ****\n
     Menu principal\n
     1. Gestion joueurs
     2. Gestion Tournois
@@ -31,20 +31,15 @@ PLAYER_GENERATE_MENU = """
 TOURNAMENT_MENU = """
     Menu Tournois\n
     1. Afficher liste tournois
-    2. Afficher le détail d'un tournoi
-    3. Créer tournoi
-    4. Générer des tournois (POUR TEST)
-    5. Ajouter des joueurs à un tournoi
-    6. Commencer un tournoi
-    7. Ajouter le score d'un tour
-    8. Débuter un nouveau tour
-    9. Terminer un tournoi
-    10. Retour au menu principal
+    2. Créer tournoi
+    3. Générer des tournois (POUR TEST)
+    4. Ajouter des joueurs à un tournoi
+    5. Commencer un tournoi
+    6. Ajouter le score d'un tour
+    7. Débuter un nouveau tour
+    8. Terminer un tournoi
+    9. Retour au menu principal
 """
-
-TOURNAMENT_DETAIL_MENU = """**** Détails sur un tournoi ****\n
-    Indiquer l'ID du tournoi :
-    """
 
 TOURNAMENT_CREATE_MENU = "**** Création d'un nouveau tournoi ****"
 

@@ -1,10 +1,10 @@
 from operator import itemgetter
+from datetime import datetime
 
 from chess.utils import TournamentStatus
 
 
 class Tournament:
-
     id = None
     name = None
     location = None
@@ -15,37 +15,37 @@ class Tournament:
     number_of_rounds = None
     current_round_number = None
     rounds_list = []
-    player_list = []
+    player_score_list = []
     tournaments_repertory = []
 
     def __init__(self, **kwargs):
-        # Génére un ID si aucun n'est spécifié
+        # Génère un ID si aucun n'est spécifié
         self.id = kwargs.get('id', self.__create_id())
         self.name = kwargs.get("name", "")
         self.location = kwargs.get("location", "")
-        self.status = TournamentStatus.CREATED
+        self.status = kwargs.get("status", TournamentStatus.CREATED)
         self.start_date = kwargs.get("start_date", "")
         self.end_date = kwargs.get("end_date", "")
         self.description = kwargs.get("description", "")
         self.number_of_rounds = kwargs.get("number_of_rounds", 0)
         self.current_round_number = kwargs.get("current_round_number", 0)
         self.rounds_list = kwargs.get("rounds_list", [])
-        self.player_list = kwargs.get("player_list", [])
+        self.player_score_list = kwargs.get("player_score_list", [])
 
         Tournament.tournaments_repertory.append(self)
 
-    def __create_id(self):
+    def __create_id(self) -> int:
         _id = len(Tournament.tournaments_repertory)
         return _id
 
     def get_status(self) -> TournamentStatus:
         return self.status
 
-    def get_player_list(self):
-        return self.player_list
+    def get_player_score_list(self):
+        return self.player_score_list
 
-    def set_player_list(self, new_player_list):
-        self.player_list = new_player_list
+    def set_player_score_list(self, new_player_score_list):
+        self.player_score_list = new_player_score_list
 
     def get_current_round_number(self):
         return self.current_round_number
@@ -55,13 +55,15 @@ class Tournament:
         chess_round = self.rounds_list[round_indice]
         return chess_round
 
+    def get_number_of_rounds(self):
+        return self.number_of_rounds
+
     def add_player_to_tournament(self, player):
         INIT_SCORE = 0.0
-        # TODO : on enregistre que l'id du joueur pour régler un pb de serialisation json
-        self.player_list.append((player.id, INIT_SCORE))
+        # TODO : on enregistre que l'id du joueur plutot que l'instance pour régler un pb de serialisation json
+        self.player_score_list.append((player.id, INIT_SCORE))
 
     def change_status(self, new_status: TournamentStatus):
-        # TODO a déplacer dans command ou garder dans le modele ?
         actual_status = self.get_status()
         if actual_status == TournamentStatus.TERMINATED:
             raise PermissionError("on ne peut modifier le statut d'un tournoi terminé")
@@ -70,24 +72,9 @@ class Tournament:
         else:
             self.status = new_status
 
-    # def add_score_in_tournament_ranking(self, score_to_add: float, player_id):
-    #     # TODO : a déplacer dans service
-    #     player_list = self.get_player_list()
-    #     player_index = None
-    #     for index, (p_id, _) in enumerate(player_list):
-    #         if p_id == player_id:
-    #             player_index = index
-    #             break
-    #     (_, score) = player_list[player_index]
-    #     new_score = score + score_to_add
-    #     self.player_list[player_index] = (player_id, new_score)
-
-    #     # TODO : déplacer le set_player_list dans le controller une fois tous les scores modifiés pour limiter les maj
-    #     self.set_player_list(player_list)
-
     def sort_players_by_score(self):
-        # la liste des joueurs contient des éléments de la forme (Player, score)
-        self.player_list.sort(key=itemgetter(1), reverse=True)
+        # la liste des joueurs est de la forme (Player, score)
+        self.player_score_list.sort(key=itemgetter(1), reverse=True)
 
     @staticmethod
     def get_tournaments_repertory():
@@ -98,44 +85,49 @@ class Tournament:
         return Tournament.tournaments_repertory[tournament_id]
 
     def __repr__(self) -> str:
-        return "ID {} : {} - Du {} au {} - {} tours".format(self.id,
-                                                            self.name,
-                                                            self.start_date,
-                                                            self.end_date,
-                                                            self.number_of_rounds,
-                                                            )
-
-    # # Méthode pour sérialiser l'objet en un dictionnaire
-    # def encode(self):
-    #     return {
-    #         "id": self.id,
-    #         "name": self.name,
-    #         "location": self.location,
-    #         "start_date": self.start_date,
-    #         "end_date": self.end_date,
-    #         "number_of_rounds": self.number_of_rounds,
-    #         "description": self.description,
-    #         "rounds_list": [round.__dict__() for round in self.rounds_list]  # Serialisation d'objets imbriqués
-    #     }
+        return "ID {} : {} - {} tours".format(self.id,
+                                              self.name,
+                                              self.number_of_rounds,
+                                              )
 
 
-class Round:
+class ChessRound:
+    id = None
+    round_name = None
+    start_date = None
+    end_date = None
+    matchs_list = []
+
     def __init__(self, **kwargs):
-        self.id = kwargs.get("round_number")
-        self.round_name = f"Tour {kwargs.get("round_number")}"
+        self.id = kwargs.get("id")
+        self.round_name = kwargs.get("round_name")
         self.start_date = kwargs.get("start_date")
         self.end_date = kwargs.get("end_date")
-        self.matchs_list = []
+        self.matchs_list = kwargs.get("matchs_list", [])
 
-    def add_match(self):
+    def add_matchs(self, matchs_list_to_add):
         """ format des matchs :
         ([player1, score_player1], [player2, score_player2])
         """
-        # TODO
-        pass
+        self.matchs_list.append(matchs_list_to_add)
 
-    def get_matchs_list(self):
+    def get_round_name(self) -> str:
+        return self.round_name
+
+    def get_matchs_list(self) -> list:
         return self.matchs_list
+
+    def set_start_date(self, date=None):
+        """Set the start_date of the round. If not specified, take the current date """
+        if date is None:
+            date = datetime.now()
+        self.start_date = date
+
+    def set_end_date(self, date=None):
+        """Set the end_date of the round. If not specified, take the current date """
+        if date is None:
+            date = datetime.now()
+        self.end_date = date
 
 
 class Player:
@@ -148,69 +140,63 @@ class Player:
     matchs_history = []
     players_repertory = []
 
-    def __init__(self, **kwargs): # player_data: dict
-        # Génère un ID si aucun n'est spécifié
-        self.id = kwargs.get("id", self.__create_id())
+    def __init__(self, **kwargs):
+        self.id = kwargs.get("id", self.__create_id())  # Generate ID if not specified
         self.national_chess_id = kwargs.get("national_chess_id")
         self.first_name = kwargs.get("first_name")
         self.last_name = kwargs.get("last_name")
         self.birthdate = kwargs.get("birthdate")
-        self.tournaments_history = kwargs.get("tournaments_history")
-        self.matchs_history = kwargs.get("matchs_history")
+        self.tournaments_history = kwargs.get("tournaments_history", [])
+        self.matchs_history = kwargs.get("matchs_history", [])
         Player.players_repertory.append(self)
 
-    def __create_id(self):
+    def __create_id(self) -> int:
         id = len(Player.players_repertory)
         return id
 
     @staticmethod
-    def get_players_repertory():
-        """Liste de tous les joueurs"""
+    def get_players_repertory() -> list:
+        """List of all players"""
         return Player.players_repertory
 
     @staticmethod
     def find_by_id(player_id: int):
-        """Retourne un jouer depuis son ID"""
+        """Return a player from his ID"""
         return Player.players_repertory[player_id]
 
-    # TODO : je ne peux pas déclarer def add_tournament_from(self, tournament: Tournament)
-    # car Tournament pas encore def... comment faire ?
-    def set_tournament_history(self, tournament):
+    def set_tournament_history(self, tournament: Tournament):
+        """ Add a tournament in the player history"""
         if tournament.id not in self.tournaments_history:
             self.tournaments_history.append(tournament.id)
         else:
             print("Le tournoi {} a déjà été ajouté à l'historique.".format(tournament.name))
 
-    # def add_tournament_by_id(self, tournament_id: int):
-    #     self.add_tournament(Tournament.find_by_id(tournament_id))
-
-    def get_tournament_history(self):
-        """Historique des tournois joués"""
+    def get_tournament_history(self) -> list:
+        """History of played tournaments"""
         return self.tournaments_history
 
-    def set_matchs_history(self, tournament, round, match):
-        # match sous la forme : ([player1, score1], [player2, score2])
-        # TODO a déplacer dans service
-        (player1_id, score1), (player2_id, score2) = match
+    def set_match_history(self, **kwargs):
+        """Add match in the player history"""
+        tournament_id = kwargs.get("tournament_id")
+        round_id = kwargs.get("round_id")
+        opponent_id = kwargs.get("opponent_id")
+        score_player = kwargs.get("score_player")
+        score_opponent = kwargs.get("score_opponent")
+        self.matchs_history.append((tournament_id,
+                                    round_id,
+                                    opponent_id,
+                                    score_player,
+                                    score_opponent))
 
-        # on détermine si le joueur est indiqué par player1 ou player2
-        adversaire = player2_id if player1_id is self else player1_id
-        score_joueur = score1 if player1_id is self else score2
-        score_adversaire = score2 if player1_id is self else score1
-
-        # format : liste de tuples => (ID tournoi, round, ID adversaire, score_joueur, score_adversaire)
-        self.matchs_history.append((tournament.id, round.id, adversaire, score_joueur, score_adversaire))
-
-    def get_matchs_history(self):
-        """ Historique des matchs joués :
-            format, liste de tuples => (ID tournoi, round, ID adversaire, score_joueur, score_adversaire)
+    def get_matchs_history(self) -> list:
+        """ History of all matchs played :
+            format : list of tuples => (tournament ID, round ID, opponent ID, player_score, opponent_score)
         """
-        list_history = []
-        return list_history
+        return self.matchs_history
 
-    def get_matchs_history_by_tournament(self, tournament):
-        """ Historique des matchs joués par tournoi :
-            format, liste de tuples => (ID tournoi, round, ID adversaire, score_joueur, score_adversaire)
+    def get_matchs_history_by_tournament(self, tournament: Tournament) -> list:
+        """ History of matchs by tournament :
+            format : list of tuples => (tournament ID, round ID, opponent ID, player_score, opponent_score)
         """
         full_list = self.get_matchs_history()
         list_history = [x for x in full_list if x[0] == tournament.id]
@@ -221,6 +207,3 @@ class Player:
                                      self.first_name,
                                      self.last_name,
                                      )
-
-    # def encode(self):
-    #     return self.__dict__

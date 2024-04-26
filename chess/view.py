@@ -11,7 +11,7 @@ from chess.command import (MainMenuCommand,
                            TournamentStartCommand,
                            TournamentEndCommand,
                            CreateRoundCommand,
-                           TournamentIdCommand,
+                           TournamentAddScoreCommand,
                            RoundAddScore,
                            ReportMenuCommand,
                            ReportTournamentDetailsCommand,
@@ -59,10 +59,15 @@ class PlayerView(InputErrorHandler):
     @InputErrorHandler.catch_input_errors
     def player_create_menu(self):
         print(text.PLAYER_CREATE_MENU)
+        national_chess_id = input("Saisir l'ID National (2 lettres majuscules + 5 chiffres) :")
         last_name = input("Saisir le nom de famille :")
         first_name = input("Saisir le prénom :")
         birthdate = input("Saisir la date de naissance au format AAAA-MM-JJ :")
-        return PlayerCreateCommand(last_name=last_name, first_name=first_name, birthdate=birthdate)
+        return PlayerCreateCommand(national_chess_id=national_chess_id,
+                                   last_name=last_name,
+                                   first_name=first_name,
+                                   birthdate=birthdate,
+                                   )
 
     @InputErrorHandler.catch_input_errors
     def player_generate_menu(self):
@@ -87,17 +92,6 @@ class TournamentView(InputErrorHandler):
         print(tournaments_list)
 
     @InputErrorHandler.catch_input_errors
-    def tournament_details_get_tournament_id(self):
-        # TODO sortir le print du décorateur
-        print(text.TOURNAMENT_DETAIL_MENU)
-        tournament_id = input()
-        return TournamentDetailCommand(tournament_id)
-
-    def display_tournament_details(self, text: str):
-        # TODO
-        print(text)
-
-    @InputErrorHandler.catch_input_errors
     def tournament_create_menu(self):
         # TODO sortir le print du décorateur
         print(text.TOURNAMENT_CREATE_MENU)
@@ -117,7 +111,7 @@ class TournamentView(InputErrorHandler):
             "number_of_rounds": number_of_rounds,
             "description": description
         }
-        
+
         # command = TournamentCreateCommand(name=name,
         #                                   location=location,
         #                                   start_date=start_date,
@@ -172,11 +166,10 @@ class RoundView(InputErrorHandler):
     def round_menu_current_round(self):
         print(text.ROUND_MENU_ADD_SCORES)
         choice = input()
-        return TournamentIdCommand(choice)
+        return TournamentAddScoreCommand(choice)
 
     @InputErrorHandler.catch_input_errors
     def round_menu_add_scores(self, player1, player2, match):
-#        (player1_id, _), (player2_id, _) = match
         print(f"Joueur 1 : {player1}")
         print(f"Joueur 2 : {player2}")
         new_score1 = input("Score du joueur 1 :")
