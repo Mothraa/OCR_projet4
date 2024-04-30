@@ -1,6 +1,7 @@
 import random
 import json
 import os
+import re
 from datetime import date, datetime, timedelta
 
 from faker import Faker
@@ -147,6 +148,7 @@ class RoundService:
             # TODO regrouper player1, 2 dans match ?
             command = view(player1, player2, chess_match)
             (player1_id, score1), (player2_id, score2) = command.chess_match
+            RoundAddScoreValidate.validate(score1, score2)
 
             cls.add_score_in_tournament_ranking(tournament, score1, player1_id)
             cls.add_score_in_tournament_ranking(tournament, score2, player2_id)
@@ -158,7 +160,7 @@ class RoundService:
         current_round.matchs_list = new_matchs_list
 
 
-class ReportService():
+class ReportService:
 
     @staticmethod
     def sort_players_list_by_name(player_list):
@@ -196,7 +198,8 @@ class ReportService():
             tournament_round['matchs_list'] = updated_matchs_list
         return tournament_dict
 
-class JsonService():
+
+class JsonService:
 
     JSON_INDENT = 4
 
@@ -352,7 +355,6 @@ class PlayerService:
         player.set_match_history(**match_info)
 
 
-
 class TournamentService:
     TOURNAMENTS_FILE_PATH = None
 
@@ -458,3 +460,176 @@ class TournamentService:
             return [cls.convert_player_to_dict(item) for item in obj]
         else:
             return JsonService.convert_attr_to_str(obj)
+
+
+class ValidateCommandService:
+
+    @classmethod
+    def validate_national_chess_id(cls, national_chess_id):
+        """validate national_chess_id format. Expected : 2 uppercase letters + 5 numbers"""
+        pattern = r'^[A-Z]{2}\d{5}$'
+        if not bool(re.match(pattern, national_chess_id)):
+            raise ValueError("Merci d'indiquer un identifiant national d'échec au bon format")
+
+    @classmethod
+    def validate_date_format(cls, date_value: date):
+        """validate date format"""
+        # TODO : a améliorer, la conversion s'effectue dans la command
+        if not isinstance(date_value, (date, datetime)):
+            raise ValueError("Merci d'indiquer une date au format AAAA-MM-JJ")
+
+    @classmethod
+    def validate_tournament_exists(self, tournament_id: int):
+        """validate the ID refers to an existing tournament"""
+        try:
+            tournament = Tournament.find_by_id(tournament_id)
+            if not tournament:
+                raise ValueError("Merci d'indiquer un numéro de tournoi existant")
+        except Exception as e:
+            raise ValueError("Merci d'indiquer un numéro de tournoi existant: {}".format(e))
+
+    @classmethod
+    def validate_player_exists(self, player_id: int):
+        """validate the ID refers to an existing player"""
+        player = Player.find_by_id(player_id)
+        if not player:
+            raise ValueError("Merci d'indiquer un numéro de tournoi existant")
+
+    @classmethod
+    def validate_tournament_status(cls, tournament_id, status: TournamentStatus):
+        """validate if the tournament status matches the specified status"""
+        tournament = Tournament.find_by_id(tournament_id)
+        if tournament.status is not status:
+            raise ValueError(f"Impossible d'effectuer l'action le statut du tournoi est {tournament.status}")
+
+    @classmethod
+    def validate_already_added_players(cls, tournament_id: int, players_id_list: list):
+        """validate if the player has already been added to the tournament"""
+        tournament = Tournament.find_by_id(tournament_id)
+        players_id_already_added = [player[0] for player in tournament.player_score_list]
+        for player_id in players_id_list:
+            if player_id in players_id_already_added:
+                raise ValueError(f"Le joueur avec l'ID {player_id} a déjà été ajouté au tournoi")
+
+    @classmethod
+    def validate_minimum_players(cls, tournament_id: int):
+        """Validate minimum of 2 players for starting a tournament"""
+        tournament = Tournament.find_by_id(tournament_id)
+        if len(tournament.player_score_list) <= 2:
+            raise ValueError("Le tournoi ne peut être commencé, pas assez de joueurs")
+
+    @classmethod
+    def validate_last_round_reached(cls, tournament_id: int):
+        """Check if we are in the last round"""
+        tournament = Tournament.find_by_id(tournament_id)
+        if tournament.current_round_number != tournament.number_of_rounds:
+            raise ValueError("Tous les tours du tournoi n'ont pas été joués")
+
+    @classmethod
+    def validate_round_matches(cls, tournament_id: int, check_played=True):
+        """Validate the completion status of matches in the current round
+        Args:
+            tournament_id : tournament's id
+            check_played :
+                True : check if matches have been played
+                    (raises an exception if a match in the current round
+                    has not been played)
+                False : check if matches have not been played
+                    (raises an exception if a match in the current round
+                    has already been played)
+        """
+        tournament = Tournament.find_by_id(tournament_id)
+        chess_round = tournament.current_round()
+        for chess_match in chess_round.matchs_list:
+            (_, score1), (_, score2) = chess_match
+            if check_played:
+                if score1 == 0.0 and score2 == 0.0:
+                    raise ValueError(f"Les matchs du tour ({chess_round.round_name}) ne sont pas terminés")
+            else:
+                if score1 != 0.0 and score2 != 0.0:
+                    raise ValueError(f"Les matchs du tour ({chess_round.round_name}) ont déjà été joués")
+
+    @classmethod
+    def validate_match_score(cls, score1: float, score2: float):
+        """valid if the scores entered by the user are compliant with rules"""
+        if float(score1) not in [0.0, 0.5, 1.0]:
+            raise ValueError("Merci d'indiquer une valeur de 0, 0.5 ou 1 pour le joueur 1")
+        elif float(score2) not in [0.0, 0.5, 1.0]:
+            raise ValueError("Merci d'indiquer une valeur de 0, 0.5 ou 1 pour le joueur 2")
+        elif score1 == 1.0 and score2 != 0.0:
+            raise ValueError("Les scores doivent être soit 0-1, 0.5-0.5, ou 1-0")
+        elif score1 == 0.0 and score2 != 1.0:
+            raise ValueError("Les scores doivent être soit 0-1, 0.5-0.5, ou 1-0")
+        elif score1 == 0.5 and score2 != 0.5:
+            raise ValueError("Les scores doivent être soit 0-1, 0.5-0.5, ou 1-0")
+
+
+class TournamentAddScoreValidate:
+    @staticmethod
+    def validate(tournament_id):
+        ValidateCommandService.validate_tournament_exists(tournament_id)
+        status = TournamentStatus.IN_PROGRESS
+        ValidateCommandService.validate_tournament_status(tournament_id, status)
+        ValidateCommandService.validate_round_matches(tournament_id, check_played=False)
+
+
+class RoundAddScoreValidate:
+    @staticmethod
+    def validate(score1: float, score2: float):
+        ValidateCommandService.validate_match_score(score1, score2)
+
+
+class PlayerCreateValidate:
+    @staticmethod
+    def validate(national_chess_id: str, birthdate: date):
+        ValidateCommandService.validate_national_chess_id(national_chess_id)
+        ValidateCommandService.validate_date_format(birthdate)
+
+
+class TournamentCreateValidate:
+    @staticmethod
+    def validate(start_date: date, end_date: date):
+        ValidateCommandService.validate_date_format(start_date)
+        ValidateCommandService.validate_date_format(end_date)
+
+
+class TournamentAddPlayerValidate:
+    @staticmethod
+    def validate(tournament_id: int, players_ids: list):
+        status = TournamentStatus.CREATED
+        ValidateCommandService.validate_tournament_status(tournament_id, status)
+        ValidateCommandService.validate_tournament_exists(tournament_id)
+        for player_id in players_ids:
+            ValidateCommandService.validate_player_exists(player_id)
+        ValidateCommandService.validate_already_added_players(tournament_id, players_ids)
+
+
+class ReportTournamentDetailsValidate:
+    @staticmethod
+    def validate(tournament_id):
+        ValidateCommandService.validate_tournament_exists(tournament_id)
+
+
+class TournamentStartValidate:
+    @staticmethod
+    def validate(tournament_id):
+        status = TournamentStatus.CREATED
+        ValidateCommandService.validate_tournament_status(tournament_id, status)
+        ValidateCommandService.validate_minimum_players(tournament_id)
+
+
+class TournamentEndValidate:
+    @staticmethod
+    def validate(tournament_id):
+        status = TournamentStatus.IN_PROGRESS
+        ValidateCommandService.validate_tournament_status(tournament_id, status)
+        ValidateCommandService.validate_last_round_reached(tournament_id)
+        ValidateCommandService.validate_round_matches(tournament_id, check_played=True)
+
+
+class CreateRoundValidate:
+    @staticmethod
+    def validate(tournament_id):
+        status = TournamentStatus.IN_PROGRESS
+        ValidateCommandService.validate_tournament_status(tournament_id, status)
+        ValidateCommandService.validate_round_matches(tournament_id, check_played=True)

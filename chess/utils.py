@@ -6,11 +6,6 @@ class ExtendedEnum(Enum):
     def list(cls):
         return list(map(lambda c: c.value, cls))
 
-# class MainOption(ExtendedEnum):
-#     PLAYER_MENU_OPTION = 1
-#     TOURNAMENT_MENU_OPTION = 2
-#     CLOSE_PROGRAM_OPTION = 3
-
 
 class TournamentStatus(ExtendedEnum):
     CREATED = 1

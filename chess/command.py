@@ -1,7 +1,4 @@
 from datetime import date
-import re
-
-from chess.model import Player, Tournament, TournamentStatus
 
 
 class MainMenuCommand:
@@ -28,7 +25,7 @@ class PlayerMenuCommand:
     NB_CHOIX_MAX = 4
 
     def __init__(self, choice):
-        # faire hériter de MainMenuCommand ?
+        # TODO faire hériter de MainMenuCommand ?
         self.choice = choice
         self.self_validate()
         self.clean_up()
@@ -56,24 +53,19 @@ class PlayerCreateCommand:
         self.first_name = kwargs.get("first_name")
         self.last_name = kwargs.get("last_name")
         self.birthdate = kwargs.get("birthdate")
-
         self.self_validate()
         self.clean_up()
 
+    def clean_up(self):
+        self.birthdate = date.fromisoformat(self.birthdate)
+
     def self_validate(self):
-        pattern = r'^[A-Z]{2}\d{5}$'
-        if not bool(re.match(pattern, self.national_chess_id)):
-            raise ValueError("Merci d'indiquer un identifiant national d'échec au bon format")
         if self.first_name is None:
             raise ValueError("Merci d'indiquer un nom")
         if self.last_name is None:
             raise ValueError("Merci d'indiquer un prénom")
-        # TODO : tests sur les dates a améliorer et a déplacer sur utils.py
-        if (self.birthdate is None) or (type(date.fromisoformat(self.birthdate)) is not date):
-            raise ValueError("Merci d'indiquer une date au format AAAA-MM-JJ")
-
-    def clean_up(self):
-        self.birthdate = date.fromisoformat(self.birthdate)
+        if self.birthdate is None:
+            raise ValueError("Merci d'indiquer une date")
 
     def to_dict(self):
         return {
@@ -88,7 +80,6 @@ class PlayerGenerateCommand:
     choice = None
 
     def __init__(self, choice):
-        # faire hériter de MainMenuCommand ?
         self.choice = choice
         self.self_validate()
         self.clean_up()
@@ -155,7 +146,7 @@ class TournamentCreateCommand:
             raise ValueError("Merci d'indiquer une date au format AAAA-MM-JJ")
         elif (self.end_date is None) or (type(date.fromisoformat(self.end_date)) is not date):
             raise ValueError("Merci d'indiquer une date au format AAAA-MM-JJ")
-        elif self.number_of_rounds == "":  # TODO ou None ? a tester
+        elif self.number_of_rounds == "":
             self.number_of_rounds = self.DEFAULT_ROUND_NUMBER
         elif not self.number_of_rounds.isdigit():
             # todo verifier également que c'est un entier
@@ -205,9 +196,7 @@ class TournamentAddPlayerCommand:
         self.players_ids_string = players_ids_string
         self.self_validate()
         self.clean_up()
-        # self.check_tournament_exists()
-        self.check_tournament_status()
-        # self.check_already_added()
+        # self.check_players_exists()
 
     def self_validate(self):
         if self.tournament_id is None:
@@ -219,39 +208,15 @@ class TournamentAddPlayerCommand:
         id_list = self.players_ids_string.strip().split(sep=" ")
         # on transforme chaque ID en int
         id_list = [int(player_id) for player_id in id_list]
-        # on vérifie qui les ID indiqués existent
-        if not [Player.find_by_id(player_id) for player_id in id_list]:
-            raise ValueError("Merci d'indiquer des ID joueur valides")
+
+        # # on vérifie qui les ID indiqués existent
+        # if not [Player.find_by_id(player_id) for player_id in id_list]:
+        #     raise ValueError("Merci d'indiquer des ID joueur valides")
 
     def clean_up(self):
         self.tournament_id = int(self.tournament_id)
-
         id_list = self.players_ids_string.strip().split(sep=" ")
         self.players_id_list = [int(player_id) for player_id in id_list]
-
-    def check_tournament_exists(self):
-        # on verifie que l'ID renvoi vers un tournoi existant
-        try:
-            tournament = Tournament.find_by_id(int(self.tournament_id))
-            if not tournament:
-                raise ValueError("Merci d'indiquer un numéro de tournoi existant")
-        except Exception as e:
-            raise ValueError("Merci d'indiquer un numéro de tournoi existant: {}".format(e))
-
-    def check_tournament_status(self):
-        tournament = Tournament.find_by_id(self.tournament_id)
-        # on vérifie que le statut du tournoi soit au statut CREATED
-        if tournament.status is not TournamentStatus.CREATED:
-            raise ValueError(f"Impossible d'ajouter des joueurs, son statut est {tournament.status}")
-
-    def check_already_added(self):
-        # Vérifie si le joueur a déjà été ajouté au tournoi
-        tournament = Tournament.find_by_id(self.tournament_id)
-
-        players_id_already_added = [player[0] for player in tournament.player_score_list]
-        for player_id in self.players_id_list:
-            if player_id in players_id_already_added:
-                raise ValueError(f"Le joueur avec l'ID {player_id} a déjà été ajouté au tournoi")
 
 
 class TournamentStartCommand:
@@ -261,10 +226,8 @@ class TournamentStartCommand:
         self.choice = choice
         self.self_validate()
         self.clean_up()
-        self.check_tournament_status()
 
     def self_validate(self):
-
         if self.choice is None:
             raise ValueError("Merci d'indiquer un nombre")
         elif not isinstance(int(self.choice), int) or int(self.choice) < 0:
@@ -272,16 +235,6 @@ class TournamentStartCommand:
 
     def clean_up(self):
         self.choice = int(self.choice)
-
-    def check_tournament_status(self):
-        tournament = Tournament.find_by_id(self.choice)
-        # on vérifie que le statut du tournoi soit au statut CREATED
-        if tournament.status is not TournamentStatus.CREATED:
-            raise ValueError(f"Le tournoi ne peut être commencé, son statut est {tournament.status}")
-
-        # qu'il y ai au moins 2 joueurs
-        if len(tournament.player_score_list) <= 2:
-            raise ValueError("Le tournoi ne peut être commencé, pas assez de joueurs")
 
 
 class TournamentEndCommand:
@@ -291,11 +244,8 @@ class TournamentEndCommand:
         self.choice = choice
         self.self_validate()
         self.clean_up()
-        self.check_tournament_status()
-        self.check_played_matchs()
 
     def self_validate(self):
-
         if self.choice is None:
             raise ValueError("Merci d'indiquer un nombre")
         elif not isinstance(int(self.choice), int) or int(self.choice) < 0:
@@ -303,28 +253,6 @@ class TournamentEndCommand:
 
     def clean_up(self):
         self.choice = int(self.choice)
-
-    def check_tournament_status(self):
-        tournament = Tournament.find_by_id(self.choice)
-        # on vérifie que le statut du tournoi soit au statut IN PROGRESS
-        if tournament.status is not TournamentStatus.IN_PROGRESS:
-            raise ValueError(f"Le tournoi ne peut être terminé, son statut est {tournament.status}")
-
-        # que l'on est au dernier round
-        if tournament.current_round_number != tournament.number_of_rounds:
-            raise ValueError("Tous les tours du tournoi n'ont pas été joués")
-
-    def check_played_matchs(self):
-        tournament = Tournament.find_by_id(self.choice)
-        # on vérifie que tous les matchs du dernier round ont été joués
-        round_indice = tournament.current_round_number - 1
-        chess_round = tournament.rounds_list[round_indice]
-        for chess_match in chess_round.matchs_list:
-            # on regarde les scores des matchs (sous la forme de tuples : (player1, score1)(player2, score2))
-            # TODO créer une fonction get_match_score (par ex)
-            (_, score1), (_, score2) = chess_match
-            if score1 == 0.0 and score2 == 0.0:
-                raise ValueError("Les matchs du tournoi / tour indiqué ne sont pas terminés")
 
 
 class CreateRoundCommand:
@@ -334,8 +262,6 @@ class CreateRoundCommand:
         self.choice = choice
         self.self_validate()
         self.clean_up()
-        # self.check_tournament_status()
-        # self.check_played_matchs()
 
     def self_validate(self):
         if self.choice is None:
@@ -345,28 +271,6 @@ class CreateRoundCommand:
 
     def clean_up(self):
         self.choice = int(self.choice)
-
-    def check_tournament_status(self):
-        tournament = Tournament.find_by_id(self.choice)
-        # on vérifie que le statut du tournoi soit au statut IN_PROGRESS
-        if tournament.status is not TournamentStatus.IN_PROGRESS:
-            raise ValueError(f"Le tournoi ne peut être poursuivi, son statut est {tournament.status}")
-
-        # on vérifie si on peut toujours ajouter des rounds (limite de rounds atteinte)
-        if tournament.current_round_number == tournament.number_of_rounds:
-            raise ValueError("Tous les tours du tournoi ont déjà été créés")
-
-    def check_played_matchs(self):
-        tournament = Tournament.find_by_id(self.choice)
-        # on vérifie que tous les matchs du tour précédent ont été joués
-        round_indice = tournament.current_round_number() - 1
-        chess_round = tournament.rounds_list[round_indice]
-        for chess_match in chess_round.matchs_list:
-            # on regarde les scores des matchs (sous la forme de tuples : (player1, score1)(player2, score2))
-            # TODO créer une fonction get_match_score (par ex)
-            (_, score1), (_, score2) = chess_match
-            if score1 == 0.0 and score2 == 0.0:
-                raise ValueError("Les matchs du tournoi / tour n'ont pas encore été joués")
 
 
 class TournamentAddScoreCommand:
@@ -376,7 +280,6 @@ class TournamentAddScoreCommand:
         self.choice = choice
         self.self_validate()
         self.clean_up()
-        # self.check_not_played_matchs() => erreur 'function' object has no attribute 'matchs_list'
 
     def self_validate(self):
         if self.choice is None:
@@ -387,19 +290,8 @@ class TournamentAddScoreCommand:
     def clean_up(self):
         self.choice = int(self.choice)
 
-    def check_not_played_matchs(self):
-        tournament = Tournament.find_by_id(self.choice)
-        # on vérifie que les matchs du tour n'ont pas été joués
-        chess_round = tournament.current_round
-        for chess_match in chess_round.matchs_list:
-            # on regarde les scores des matchs (sous la forme de tuples : (player1, score1)(player2, score2))
-            # TODO créer une fonction get_match_score (par ex)
-            (_, score1), (_, score2) = chess_match
-            if score1 != 0.0 and score2 != 0.0:
-                raise ValueError("Les matchs du tournoi / tour indiqué ont déjà été joués")
 
-
-class RoundAddScore:
+class RoundAddScoreCommand:
     new_score1 = None
     new_score2 = None
     chess_match = None
@@ -418,30 +310,17 @@ class RoundAddScore:
             raise ValueError("Merci d'indiquer une valeur valide")
         elif not isinstance(float(self.new_score1), float) or float(self.new_score1) < 0:
             raise ValueError("Merci d'indiquer un nombre entier positif")
-        elif float(self.new_score1) not in [0.0, 0.5, 1.0]:
-            raise ValueError("Merci d'indiquer une valeur de 0, 0.5 ou 1 pour le joueur 1")
         elif self.new_score2 is None:
             raise ValueError("Merci d'indiquer une valeur valide")
         elif not isinstance(float(self.new_score2), float) or float(self.new_score2) < 0:
             raise ValueError("Merci d'indiquer un nombre entier positif")
-        elif float(self.new_score2) not in [0.0, 0.5, 1.0]:
-            raise ValueError("Merci d'indiquer une valeur de 0, 0.5 ou 1 pour le joueur 2")
-        # TODO : le score ne peut etre que 0-1 ou 0.5-0.5 ou 1-0
-        # si le score du joueur 1 est 1.0, le score du joueur 2 doit etre 0.0 (et inversement)
-        # si le score du joueur 1 est 0.5 le score du joueur 2 doit être 0.5
-        elif self.new_score1 == 1.0 and self.new_score2 != 0.0:
-            raise ValueError("Les scores doivent être soit 0-1, 0.5-0.5, ou 1-0")
-        elif self.new_score1 == 0.0 and self.new_score2 != 1.0:
-            raise ValueError("Les scores doivent être soit 0-1, 0.5-0.5, ou 1-0")
-        elif self.new_score1 == 0.5 and self.new_score2 != 0.5:
-            raise ValueError("Les scores doivent être soit 0-1, 0.5-0.5, ou 1-0")
 
     def clean_up(self):
         self.new_score1 = float(self.new_score1)
         self.new_score2 = float(self.new_score2)
 
     def update_score(self):
-        (player1, score1), (player2, score2) = self.chess_match
+        (player1, _), (player2, _) = self.chess_match
         self.chess_match = (player1, self.new_score1), (player2, self.new_score2)
 
 
@@ -472,7 +351,6 @@ class ReportTournamentDetailsCommand:
         self.choice = choice
         self.self_validate()
         self.clean_up()
-        self.check_valid_tournament()
 
     def self_validate(self):
         if self.choice is None:
@@ -483,10 +361,6 @@ class ReportTournamentDetailsCommand:
     def clean_up(self):
         self.choice = int(self.choice)
 
-    def check_valid_tournament(self):
-        tournament = Tournament.find_by_id(self.choice)
-        if tournament is None:
-            raise ValueError("Aucun tournoi avec cet ID")
 
 # exemple avec decorateur
     # def validate_input(func):

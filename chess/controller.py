@@ -12,6 +12,14 @@ from chess.service import (
                         JsonService,
                         PlayerService,
                         TournamentService,
+                        TournamentAddScoreValidate,
+                        PlayerCreateValidate,
+                        TournamentCreateValidate,
+                        TournamentAddPlayerValidate,
+                        ReportTournamentDetailsValidate,
+                        TournamentStartValidate,
+                        TournamentEndValidate,
+                        CreateRoundValidate,
                         )
 
 
@@ -119,8 +127,16 @@ class PlayerController():
 
     def player_create_menu(self):
         command = self.view.player_create_menu()
+        PlayerCreateValidate.validate(command.national_chess_id, command.birthdate)
         # TODO : to_dict possible ? ou garder l'instance command jusqu'a l'instanciation de Player ?
         self.player_create(command.to_dict())
+        self.player_menu()
+
+    def players_generate(self):
+        command = self.view.player_generate_menu()
+        for _ in range(command.choice):
+            command_player = self.generate_player_service.generate_player_all_attrs()
+            self.player_create(command_player)
         self.player_menu()
 
     def player_create(self, command):
@@ -129,13 +145,6 @@ class PlayerController():
         # TODO print et logging a passer avec un décorateur
         print("création du joueur >> " + str(player))
         logging.info("création du joueur >> " + str(player))
-
-    def players_generate(self):
-        command = self.view.player_generate_menu()
-        for _ in range(command.choice):
-            command_player = self.generate_player_service.generate_player_all_attrs()
-            self.player_create(command_player)
-        self.player_menu()
 
 
 class TournamentController():
@@ -190,7 +199,15 @@ class TournamentController():
 
     def tournament_menu_create(self):
         command = self.view.tournament_create_menu()
+        TournamentCreateValidate.validate(command.start_date, command.end_date)
         self.tournament_create(command.to_dict())
+        self.tournament_menu()
+
+    def tournament_generate(self):
+        command = self.view.tournament_generate_menu()
+        for _ in range(command.choice):
+            command_tournament = self.generate_service.generate_tournament_all_attrs()
+            self.tournament_create(command_tournament)
         self.tournament_menu()
 
     def tournament_create(self, command):
@@ -200,23 +217,17 @@ class TournamentController():
         logging.info("création d'un tournoi >> " + str(tournament))
         return tournament
 
-    def tournament_generate(self):
-        command = self.view.tournament_generate_menu()
-        for _ in range(command.choice):
-            command_tournament = self.generate_service.generate_tournament_all_attrs()
-            self.tournament_create(command_tournament)
-        self.tournament_menu()
-
     def tournament_add_players(self):
         command = self.view.tournament_add_players()
+        TournamentAddPlayerValidate.validate(command.tournament_id, command.players_id_list)
         self.add_players_by_ids(command.tournament_id, command.players_id_list)
         tournament = Tournament.find_by_id(command.tournament_id)
         self.tournament_service.update_tournament_as_json(tournament)
         self.tournament_menu()
 
     def tournament_menu_start(self):
-        # TODO : vérifier controle
         command = self.view.tournament_menu_start()
+        TournamentStartValidate.validate(command.choice)
         tournament = Tournament.find_by_id(command.choice)
         self.tournament_init(tournament)
         self.tour.create_first_round(tournament)
@@ -224,7 +235,6 @@ class TournamentController():
         self.tournament_menu()
 
     def tournament_menu_add_scores(self):
-        # TODO : vérifier controle
         tournament = self.tour.add_scores()
         self.tournament_service.update_tournament_as_json(tournament)
         for player in tournament.player_score_list:
@@ -246,6 +256,7 @@ class TournamentController():
     def tournament_menu_end(self):
         # TODO : vérifier controle
         command = self.view.tournament_menu_end()
+        TournamentEndValidate.validate(command.choice)
         tournament = Tournament.find_by_id(command.choice)
         tournament.change_status(TournamentStatus.TERMINATED)
         self.tournament_service.update_tournament_as_json(tournament)
@@ -302,6 +313,7 @@ class RoundController():
     def create_next_round(self):
         """End a round and start a new one"""
         command = self.view.create_round_menu()
+        CreateRoundValidate.validate(command.choice)
         tournament = Tournament.find_by_id(command.choice)
         # on termine le round précédent
         self.end_round(tournament)
@@ -339,11 +351,13 @@ class RoundController():
         """Add scores to the current Round"""
         # TODO : gérer l'erreur si on souhaite ajouter les scores sans avoir commencé le tournoi
         command = self.view.round_menu_current_round()
+        TournamentAddScoreValidate.validate(command.choice)
         tournament = Tournament.find_by_id(command.choice)
         print("Ajout du score pour le tournoi {} // Tour : {} sur {}".format(tournament,
                                                                              tournament.current_round_number,
                                                                              tournament.number_of_rounds,
                                                                              ))
+        # TODO : a reprendre pour extraire l'appel a la vue et le controle du service
         self.round_service.add_scores_to_tournament(tournament, self.view.round_menu_add_scores)
         return tournament
 
@@ -389,6 +403,7 @@ class ReportController():
     def report_tournament_details(self):
         """Show details of one tournament"""
         command = self.view.report_tournament_details()
+        ReportTournamentDetailsValidate.validate(command.choice)
         tournament = Tournament.find_by_id(command.choice)
         tournament_dict = ReportService.tournament_details(tournament)
         pprint(tournament_dict)

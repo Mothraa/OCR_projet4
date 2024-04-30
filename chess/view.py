@@ -11,7 +11,7 @@ from chess.command import (MainMenuCommand,
                            TournamentEndCommand,
                            CreateRoundCommand,
                            TournamentAddScoreCommand,
-                           RoundAddScore,
+                           RoundAddScoreCommand,
                            ReportMenuCommand,
                            ReportTournamentDetailsCommand,
                            )
@@ -92,7 +92,6 @@ class TournamentView(InputErrorHandler):
 
     @InputErrorHandler.catch_input_errors
     def tournament_create_menu(self):
-        # TODO sortir le print du décorateur
         print(text.TOURNAMENT_CREATE_MENU)
 
         name = input("Saisir le nom du tournoi :")
@@ -134,10 +133,6 @@ class TournamentView(InputErrorHandler):
         players_id_list = input()
         return TournamentAddPlayerCommand(tournament_id, players_id_list)
 
-    def tournament_add_players_display(self):
-        # TODO
-        pass
-
     @InputErrorHandler.catch_input_errors
     def tournament_menu_start(self):
         print(text.TOURNAMENT_START_MENU)
@@ -173,7 +168,7 @@ class RoundView(InputErrorHandler):
         print(f"Joueur 2 : {player2}")
         new_score1 = input("Score du joueur 1 :")
         new_score2 = input("Score du joueur 2 :")
-        return RoundAddScore(new_score1, new_score2, match)
+        return RoundAddScoreCommand(new_score1, new_score2, match)
 
 
 class ReportView(InputErrorHandler):
