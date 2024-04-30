@@ -8,6 +8,11 @@ from faker import Faker
 
 from chess.utils import TournamentStatus
 from chess.model import Player, Tournament, ChessRound
+from chess.exceptions import (
+                            NationalChessIdFormatError,
+                            InvalidDateFormatError,
+                            TournamentStatusError,
+                            )
 
 
 class Generator:
@@ -131,7 +136,6 @@ class RoundService:
         (_, score) = player_list[player_index]
         new_score = score + score_to_add
         tournament.player_score_list[player_index] = (player_id, new_score)
-
         # TODO : déplacer le set_player_list dans le controller une fois tous les scores modifiés pour limiter les maj
         # update player score list
         tournament.player_score_list = player_list
@@ -213,9 +217,9 @@ class JsonService:
         tournaments = TournamentService.load_tournaments_from_json()
         print("Chargement de {} tournois".format(len(tournaments)))
 
-    def create_json_file(self, json_file_path):
+    @staticmethod
+    def create_json_file(json_file_path):
         """Create a void JSON file if not exist"""
-        # TODO : a passer en statique ?
         if not os.path.exists(json_file_path):
             with open(json_file_path, "w") as f:
                 json.dump([], f)
@@ -444,8 +448,6 @@ class TournamentService:
             round_dict = {key: cls.convert_tournament_to_dict(value)
                           for key, value in obj.to_json().items()}
             return round_dict
-        # elif isinstance(obj, Player):
-        #     return obj.id
         elif isinstance(obj, list):
             return [cls.convert_tournament_to_dict(item) for item in obj]
         else:
@@ -469,47 +471,49 @@ class ValidateCommandService:
         """validate national_chess_id format. Expected : 2 uppercase letters + 5 numbers"""
         pattern = r'^[A-Z]{2}\d{5}$'
         if not bool(re.match(pattern, national_chess_id)):
-            raise ValueError("Merci d'indiquer un identifiant national d'échec au bon format")
+            raise NationalChessIdFormatError()
 
     @classmethod
     def validate_date_format(cls, date_value: date):
         """validate date format"""
         # TODO : a améliorer, la conversion s'effectue dans la command
         if not isinstance(date_value, (date, datetime)):
-            raise ValueError("Merci d'indiquer une date au format AAAA-MM-JJ")
+            raise InvalidDateFormatError()
 
     @classmethod
     def validate_tournament_exists(self, tournament_id: int):
         """validate the ID refers to an existing tournament"""
-        try:
-            tournament = Tournament.find_by_id(tournament_id)
-            if not tournament:
-                raise ValueError("Merci d'indiquer un numéro de tournoi existant")
-        except Exception as e:
-            raise ValueError("Merci d'indiquer un numéro de tournoi existant: {}".format(e))
+        # TODO : validation a suppr, exception ajoutée à find_by_id
+        tournament = Tournament.find_by_id(tournament_id)
+        if not tournament:
+            raise ValueError("Merci d'indiquer un numéro de tournoi existant")
 
     @classmethod
     def validate_player_exists(self, player_id: int):
         """validate the ID refers to an existing player"""
+        # TODO : validation a suppr, exception ajoutée à find_by_id
         player = Player.find_by_id(player_id)
         if not player:
             raise ValueError("Merci d'indiquer un numéro de tournoi existant")
 
     @classmethod
-    def validate_tournament_status(cls, tournament_id, status: TournamentStatus):
+    def validate_tournament_status(cls, tournament_id, expected_status: TournamentStatus):
         """validate if the tournament status matches the specified status"""
         tournament = Tournament.find_by_id(tournament_id)
-        if tournament.status is not status:
-            raise ValueError(f"Impossible d'effectuer l'action le statut du tournoi est {tournament.status}")
+        if tournament.status is not expected_status:
+            raise TournamentStatusError(tournament.status)
 
     @classmethod
-    def validate_already_added_players(cls, tournament_id: int, players_id_list: list):
+    def validate_already_added_players(cls, tournament_id: int, players_ids_to_add: list):
         """validate if the player has already been added to the tournament"""
         tournament = Tournament.find_by_id(tournament_id)
-        players_id_already_added = [player[0] for player in tournament.player_score_list]
-        for player_id in players_id_list:
-            if player_id in players_id_already_added:
-                raise ValueError(f"Le joueur avec l'ID {player_id} a déjà été ajouté au tournoi")
+        # on recupère les ID des joueurs de la liste du tournoi
+        existing_players_ids = [player[0] for player in tournament.player_score_list]
+        # on regarde si il y a une correspondance entre les deux listes (players_ids_to_add et existing_players_ids)
+        already_added_player_ids = [player_id for player_id in players_ids_to_add if player_id in existing_players_ids]
+        # si c'est le cas, on lève une exception
+        if already_added_player_ids:
+            raise ValueError(f"Le(s) joueur(s) : {already_added_player_ids} a/ont déjà été ajouté(s) au tournoi")
 
     @classmethod
     def validate_minimum_players(cls, tournament_id: int):

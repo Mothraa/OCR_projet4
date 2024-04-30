@@ -1,5 +1,6 @@
 import configparser
 import logging
+from datetime import datetime
 from pprint import pprint
 
 from chess.view import MainView, PlayerView, TournamentView, RoundView, ReportView
@@ -248,13 +249,11 @@ class TournamentController():
         tournament.change_status(TournamentStatus.IN_PROGRESS)
 
     def tournament_menu_continue(self):
-        # TODO : vérifier controle
         tournament = self.tour.create_next_round()
         self.tournament_service.update_tournament_as_json(tournament)
         self.tournament_menu()
 
     def tournament_menu_end(self):
-        # TODO : vérifier controle
         command = self.view.tournament_menu_end()
         TournamentEndValidate.validate(command.choice)
         tournament = Tournament.find_by_id(command.choice)
@@ -297,7 +296,7 @@ class RoundController():
                                  round_name=f"Tour {tournament.current_round_number}",
                                  )
         # ajout date et heure de début du nouveau round
-        chess_round.start_date
+        chess_round.start_date = datetime.now()
         return chess_round
 
     def create_first_round(self, tournament: Tournament):
@@ -337,7 +336,7 @@ class RoundController():
         # ajout heure de fin du round
         chess_round = tournament.current_round()
         # ajoute la date de fin TODO : déplacer now du model vers le controller
-        chess_round.end_date
+        chess_round.end_date = datetime.now()
         print(f"fin du {chess_round.round_name}")
         logging.info(f"fin du {chess_round.round_name} du tournoi {tournament}")
         tournament.sort_players_by_score()
@@ -349,7 +348,6 @@ class RoundController():
 
     def add_scores(self):
         """Add scores to the current Round"""
-        # TODO : gérer l'erreur si on souhaite ajouter les scores sans avoir commencé le tournoi
         command = self.view.round_menu_current_round()
         TournamentAddScoreValidate.validate(command.choice)
         tournament = Tournament.find_by_id(command.choice)

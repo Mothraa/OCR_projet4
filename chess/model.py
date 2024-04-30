@@ -1,5 +1,5 @@
 from operator import itemgetter
-from datetime import datetime
+
 
 from chess.utils import TournamentStatus
 from chess.exceptions import TournamentAlreadyAddedError
@@ -28,6 +28,7 @@ class Tournament:
     _tournaments_repertory = []
 
     def __init__(self, **kwargs):
+        # TODO appeler les setters
         # Génère un ID si aucun n'est spécifié
         self._id = kwargs.get('id', self.__create_id())
         self._name = kwargs.get("name", "")
@@ -67,9 +68,6 @@ class Tournament:
     def player_score_list(self):
         return self._player_score_list
 
-    # def set_player_score_list(self, new_player_score_list):
-    #     self.player_score_list = new_player_score_list
-
     @player_score_list.setter
     def player_score_list(self, new_player_score_list):
         self._player_score_list = new_player_score_list
@@ -99,20 +97,13 @@ class Tournament:
     def tournaments_repertory(cls):
         return cls._tournaments_repertory
 
-    # @property
-    # def tournaments_repertory(self):
-    #     return Tournament._tournaments_repertory
-
-    # @tournaments_repertory.setter
-    # def tournaments_repertory(self, new_tournament):
-    #     Tournament._tournaments_repertory.append(new_tournament)
-
     def add_player_to_tournament(self, player):
         INIT_SCORE = 0.0
         # TODO : on enregistre que l'id du joueur plutot que l'instance pour régler un pb de serialisation json
         self.player_score_list.append((player.id, INIT_SCORE))
 
     def change_status(self, new_status: TournamentStatus):
+        # TODO exceptions a reprendre
         actual_status = self.status
         if actual_status == TournamentStatus.TERMINATED:
             raise PermissionError("on ne peut modifier le statut d'un tournoi terminé")
@@ -122,15 +113,18 @@ class Tournament:
             self.status = new_status
 
     def sort_players_by_score(self):
+        """Sort the list of players by score in descending order"""
         # la liste des joueurs est de la forme (Player, score)
         self.player_score_list.sort(key=itemgetter(1), reverse=True)
 
     @staticmethod
     def find_by_id(tournament_id: int):
+        if not isinstance(tournament_id, int):
+            raise ValueError("L'ID du tournoi doit être un entier")
         for tournament in Tournament.tournaments_repertory:
             if tournament.id == tournament_id:
                 return tournament
-        return None
+        raise ValueError("Aucun tournoi trouvé avec cet ID")
 
     def to_json(self):
         return {
@@ -162,6 +156,7 @@ class ChessRound:
     _matchs_list = None
 
     def __init__(self, **kwargs):
+        # TODO appeler les setters
         self._id = kwargs.get("id")
         self._round_name = kwargs.get("round_name")
         self._start_date = kwargs.get("start_date")
@@ -191,20 +186,24 @@ class ChessRound:
         self._matchs_list = new_matchs_list
 
     @property
-    def start_date(self, date=None):
-        """TODO add seter // Set the start_date of the round. If not specified, take the current date """
-        if date is None:
-            date = datetime.now()
-            self._start_date = date
+    def start_date(self):
+        """Get the start date of the round"""
         return self._start_date
 
+    @start_date.setter
+    def start_date(self, value=None):
+        """Set the start date of the round"""
+        self._start_date = value
+
     @property
-    def end_date(self, date=None):
-        """TODO add seter // Set the end_date of the round. If not specified, take the current date """
-        if date is None:
-            date = datetime.now()
-            self._end_date = date
-        return self._end_date
+    def end_date(self):
+        """Get the end date of the round"""
+        return self.end_date
+
+    @end_date.setter
+    def end_date(self, value=None):
+        """Set the end date of the round"""
+        self.end_date = value
 
     def to_json(self):
         return {
@@ -227,6 +226,7 @@ class Player:
     _players_repertory = []
 
     def __init__(self, **kwargs):
+        # TODO appeler les setters
         self._id = kwargs.get("id", self.__create_id())  # Generate ID if not specified
         self._national_chess_id = kwargs.get("national_chess_id")
         self._first_name = kwargs.get("first_name")
@@ -306,15 +306,17 @@ class Player:
     @staticmethod
     def find_by_id(player_id: int):
         """Return a player from his ID"""
+        if not isinstance(player_id, int):
+            raise ValueError("L'ID du player doit être un entier")
         for player in Player.players_repertory:
             if player.id == player_id:
                 return player
-        return None  # if not found
+        raise ValueError("Aucun joueur trouvé avec cet ID")
 
     def set_tournament_history(self, tournament: Tournament):
         """ Add a tournament in the player history"""
         if tournament.id in self.tournaments_history:
-            # TODO exception a tester
+            # TODO exception a tester (test unitaire)
             raise TournamentAlreadyAddedError(tournament.__repr__)
         self._tournaments_history.append(tournament.id)
 

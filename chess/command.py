@@ -11,7 +11,7 @@ class MainMenuCommand:
         self.clean_up()
 
     def self_validate(self):
-        if self.choice is None:
+        if not self.choice:
             raise ValueError("Merci d'indiquer un choix")
         elif not isinstance(int(self.choice), int) or int(self.choice) < 1 or int(self.choice) > self.NB_CHOIX_MAX:
             raise ValueError(f"Merci d'indiquer un nombre entre 1 et {self.NB_CHOIX_MAX}")
@@ -25,13 +25,12 @@ class PlayerMenuCommand:
     NB_CHOIX_MAX = 4
 
     def __init__(self, choice):
-        # TODO faire hériter de MainMenuCommand ?
         self.choice = choice
         self.self_validate()
         self.clean_up()
 
     def self_validate(self):
-        if self.choice is None:
+        if not self.choice:
             raise ValueError("Merci d'indiquer un choix")
         elif not isinstance(int(self.choice), int) or int(self.choice) < 1 or int(self.choice) > self.NB_CHOIX_MAX:
             raise ValueError(f"Merci d'indiquer un nombre entre 1 et {self.NB_CHOIX_MAX}")
@@ -60,11 +59,11 @@ class PlayerCreateCommand:
         self.birthdate = date.fromisoformat(self.birthdate)
 
     def self_validate(self):
-        if self.first_name is None:
+        if not self.first_name:
             raise ValueError("Merci d'indiquer un nom")
-        if self.last_name is None:
+        if not self.last_name:
             raise ValueError("Merci d'indiquer un prénom")
-        if self.birthdate is None:
+        if not self.birthdate:
             raise ValueError("Merci d'indiquer une date")
 
     def to_dict(self):
@@ -85,7 +84,7 @@ class PlayerGenerateCommand:
         self.clean_up()
 
     def self_validate(self):
-        if self.choice is None:
+        if not self.choice:
             raise ValueError("Merci d'indiquer un nombre")
         elif not isinstance(int(self.choice), int) or int(self.choice) < 0:
             raise ValueError("Merci d'indiquer un nombre entier positif")
@@ -99,14 +98,13 @@ class TournamentMenuCommand:
     NB_CHOIX_MAX = 10
 
     def __init__(self, choice):
-        # faire hériter de MainMenuCommand ?
         self.choice = choice
 
         self.self_validate()
         self.clean_up()
 
     def self_validate(self):
-        if self.choice is None:
+        if not self.choice:
             raise ValueError("Merci d'indiquer un choix")
         elif not isinstance(int(self.choice), int) or int(self.choice) < 1 or int(self.choice) > self.NB_CHOIX_MAX:
             raise ValueError(f"Merci d'indiquer un nombre entre 1 et {self.NB_CHOIX_MAX}")
@@ -138,9 +136,9 @@ class TournamentCreateCommand:
         self.clean_up()
 
     def self_validate(self):
-        if self.name is None:
+        if not self.name:
             raise ValueError("Merci d'indiquer un nom de tournoi")
-        elif self.location is None:
+        elif not self.location:
             raise ValueError("Merci d'indiquer un lieu de tournoi")
         elif (self.start_date is None) or (type(date.fromisoformat(self.start_date)) is not date):
             raise ValueError("Merci d'indiquer une date au format AAAA-MM-JJ")
@@ -149,8 +147,9 @@ class TournamentCreateCommand:
         elif self.number_of_rounds == "":
             self.number_of_rounds = self.DEFAULT_ROUND_NUMBER
         elif not self.number_of_rounds.isdigit():
-            # todo verifier également que c'est un entier
             raise ValueError("Merci d'indiquer un nombre de tours")
+        elif int(self.number_of_rounds) <= 0:
+            raise ValueError("Le nombre de tours doit être un entier positif")
 
     def clean_up(self):
         self.start_date = date.fromisoformat(self.start_date)
@@ -177,7 +176,7 @@ class TournamentGenerateCommand:
         self.clean_up()
 
     def self_validate(self):
-        if self.choice is None:
+        if not self.choice:
             raise ValueError("Merci d'indiquer un nombre")
         elif not isinstance(int(self.choice), int) or int(self.choice) < 0:
             raise ValueError("Merci d'indiquer un nombre entier positif")
@@ -196,22 +195,16 @@ class TournamentAddPlayerCommand:
         self.players_ids_string = players_ids_string
         self.self_validate()
         self.clean_up()
-        # self.check_players_exists()
 
     def self_validate(self):
-        if self.tournament_id is None:
+        if not self.tournament_id:
             raise ValueError("Merci d'indiquer un nombre")
         elif not isinstance(int(self.tournament_id), int) or int(self.tournament_id) < 0:
             raise ValueError("Merci d'indiquer un nombre entier positif")
-
         # on sépare la chaine de caractère
         id_list = self.players_ids_string.strip().split(sep=" ")
         # on transforme chaque ID en int
         id_list = [int(player_id) for player_id in id_list]
-
-        # # on vérifie qui les ID indiqués existent
-        # if not [Player.find_by_id(player_id) for player_id in id_list]:
-        #     raise ValueError("Merci d'indiquer des ID joueur valides")
 
     def clean_up(self):
         self.tournament_id = int(self.tournament_id)
@@ -228,7 +221,7 @@ class TournamentStartCommand:
         self.clean_up()
 
     def self_validate(self):
-        if self.choice is None:
+        if not self.choice:
             raise ValueError("Merci d'indiquer un nombre")
         elif not isinstance(int(self.choice), int) or int(self.choice) < 0:
             raise ValueError("Merci d'indiquer un nombre entier positif")
@@ -246,7 +239,7 @@ class TournamentEndCommand:
         self.clean_up()
 
     def self_validate(self):
-        if self.choice is None:
+        if not self.choice:
             raise ValueError("Merci d'indiquer un nombre")
         elif not isinstance(int(self.choice), int) or int(self.choice) < 0:
             raise ValueError("Merci d'indiquer un nombre entier positif")
@@ -264,7 +257,7 @@ class CreateRoundCommand:
         self.clean_up()
 
     def self_validate(self):
-        if self.choice is None:
+        if not self.choice:
             raise ValueError("Merci d'indiquer une valeur valide")
         elif not isinstance(int(self.choice), int) or int(self.choice) < 0:
             raise ValueError("Merci d'indiquer un nombre entier positif")
@@ -282,7 +275,7 @@ class TournamentAddScoreCommand:
         self.clean_up()
 
     def self_validate(self):
-        if self.choice is None:
+        if not self.choice:
             raise ValueError("Merci d'indiquer une valeur valide")
         elif not isinstance(int(self.choice), int) or int(self.choice) < 0:
             raise ValueError("Merci d'indiquer un nombre entier positif")
@@ -306,11 +299,11 @@ class RoundAddScoreCommand:
         self.update_score()
 
     def self_validate(self):
-        if self.new_score1 is None:
+        if not self.new_score1:
             raise ValueError("Merci d'indiquer une valeur valide")
         elif not isinstance(float(self.new_score1), float) or float(self.new_score1) < 0:
             raise ValueError("Merci d'indiquer un nombre entier positif")
-        elif self.new_score2 is None:
+        elif not self.new_score2:
             raise ValueError("Merci d'indiquer une valeur valide")
         elif not isinstance(float(self.new_score2), float) or float(self.new_score2) < 0:
             raise ValueError("Merci d'indiquer un nombre entier positif")
@@ -334,11 +327,14 @@ class ReportMenuCommand:
         self.clean_up()
 
     def self_validate(self):
-        if self.choice is None:
+        if not self.choice:
             raise ValueError("Merci d'indiquer un choix")
-        # TODO tester range(1, NB_CHOIX_MAX)
-        elif not isinstance(int(self.choice), int) or int(self.choice) < 1 or int(self.choice) > self.NB_CHOIX_MAX:
-            raise ValueError(f"Merci d'indiquer un nombre entre 1 et {self.NB_CHOIX_MAX}")
+        try:
+            choice_int = int(self.choice)
+            if not (1 <= choice_int <= self.NB_CHOICES_MAX):
+                raise ValueError(f"Merci d'indiquer un nombre entre 1 et {self.NB_CHOICES_MAX}")
+        except ValueError:
+            raise ValueError(f"Merci d'indiquer un nombre entre 1 et {self.NB_CHOICES_MAX}")
 
     def clean_up(self):
         self.choice = int(self.choice)
@@ -353,32 +349,10 @@ class ReportTournamentDetailsCommand:
         self.clean_up()
 
     def self_validate(self):
-        if self.choice is None:
+        if not self.choice:
             raise ValueError("Merci d'indiquer une valeur valide")
         elif not isinstance(int(self.choice), int) or int(self.choice) < 0:
             raise ValueError("Merci d'indiquer un nombre entier positif")
 
     def clean_up(self):
         self.choice = int(self.choice)
-
-
-# exemple avec decorateur
-    # def validate_input(func):
-    #     def wrapper(self, *args, **kwargs):
-    #         value = func(self, *args, **kwargs)
-    #         if not value:
-    #             raise ValueError(f"Merci d'indiquer {func.__doc__}.")
-    #         return value
-    #     return wrapper
-
-    # logging.debug("choix menu >> " + str(args[choix - 1]))
-
-    # @validate_input
-    # def validate_first_name(self):
-    #     """un prénom"""
-    #     return self.first_name
-
-    # @validate_input
-    # def validate_last_name(self):
-    #     """un nom"""
-    #     return self.last_name
