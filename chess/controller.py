@@ -1,7 +1,6 @@
-from datetime import datetime
-from pprint import pprint
 import configparser
 import logging
+from pprint import pprint
 
 from chess.view import MainView, PlayerView, TournamentView, RoundView, ReportView
 from chess.model import Player, Tournament, ChessRound, TournamentStatus
@@ -32,7 +31,7 @@ class MainController():
                             filemode="a",  # "a",
                             encoding='utf-8',
                             format='%(asctime)s - %(levelname)s : %(message)s')  # WARNING
-        # pour eviter que faker nous spam de logs
+        # change logging level of module Faker (for stop spamming !)
         logging.getLogger('faker').setLevel(logging.ERROR)
 
         config = configparser.ConfigParser()
@@ -52,21 +51,22 @@ class MainController():
         self.view.main_menu()
         command = self.view.get_user_choice()
         self.main_menu_select(command)
-        # logging.warning("whoaa!")
-        # init json
 
     def json_init(self):
+        """initialisation of JSON service and files paths"""
         self.json_service = JsonService()
         # création des fichiers json si inexistants
         self.json_service.create_json_file(MainController.PLAYERS_FILE_PATH)
         self.json_service.create_json_file(MainController.TOURNAMENTS_FILE_PATH)
 
     def app_load_data(self):
+        """load data from JSON files"""
         self.player_service = PlayerService(MainController.PLAYERS_FILE_PATH)
         self.tournament_service = TournamentService(MainController.TOURNAMENTS_FILE_PATH)
         self.json_service.load_app_data()
 
     def main_menu_select(self, command):
+        """App main menu"""
         if command.choice == 1:
             PlayerController(MainController.PLAYERS_FILE_PATH)
         elif command.choice == 2:
@@ -93,10 +93,10 @@ class PlayerController():
         self.player_service = PlayerService(player_file_path)
         self.json_service = JsonService()
         self.generate_player_service = GeneratePlayerService()
-
         self.player_menu()
 
     def player_menu(self):
+        """Main player menu"""
         command = self.view.player_menu()
         self.player_menu_select(command)
 
@@ -111,7 +111,7 @@ class PlayerController():
             self.main.main_menu()
 
     def display_players(self):
-        # TODO Player a instancier ?
+        """Display players list"""
         players = Player.get_players_repertory()
         self.view.display_players(players)
         # on retourne au menu
@@ -121,12 +121,12 @@ class PlayerController():
         command = self.view.player_create_menu()
         # TODO : to_dict possible ? ou garder l'instance command jusqu'a l'instanciation de Player ?
         self.player_create(command.to_dict())
-        # on retourne au menu
         self.player_menu()
 
     def player_create(self, command):
         player = Player(**command)
         self.player_service.add_player_as_json(player)
+        # TODO print et logging a passer avec un décorateur
         print("création du joueur >> " + str(player))
         logging.info("création du joueur >> " + str(player))
 
@@ -155,10 +155,10 @@ class TournamentController():
         self.player_service = PlayerService(player_file_path)
         self.generate_service = GenerateTournamentService()
         self.main = MainController()
-
         self.tournament_menu()
 
     def tournament_menu(self):
+        """Main tournament menu"""
         self.view.tournament_menu()
         command = self.view.tournament_menu_user_choice()
         self.tournament_menu_select(command)
@@ -184,9 +184,8 @@ class TournamentController():
             self.main.main_menu()
 
     def display_tournaments(self):
-        tournaments = Tournament.get_tournaments_repertory()
+        tournaments = Tournament.tournaments_repertory
         self.view.display_tournaments(tournaments)
-        # on retourne au menu
         self.tournament_menu()
 
     def tournament_menu_create(self):
@@ -216,7 +215,7 @@ class TournamentController():
         self.tournament_menu()
 
     def tournament_menu_start(self):
-        # TODO : ajouter controle
+        # TODO : vérifier controle
         command = self.view.tournament_menu_start()
         tournament = Tournament.find_by_id(command.choice)
         self.tournament_init(tournament)
@@ -225,10 +224,10 @@ class TournamentController():
         self.tournament_menu()
 
     def tournament_menu_add_scores(self):
-        # TODO : ajouter controle
+        # TODO : vérifier controle
         tournament = self.tour.add_scores()
         self.tournament_service.update_tournament_as_json(tournament)
-        for player in tournament.get_player_score_list():
+        for player in tournament.player_score_list:
             player_id, _ = player
             player_instance = Player.find_by_id(player_id)
             self.player_service.update_player_as_json(player_instance)
@@ -239,13 +238,13 @@ class TournamentController():
         tournament.change_status(TournamentStatus.IN_PROGRESS)
 
     def tournament_menu_continue(self):
-        # TODO : ajouter controle
+        # TODO : vérifier controle
         tournament = self.tour.create_next_round()
         self.tournament_service.update_tournament_as_json(tournament)
         self.tournament_menu()
 
     def tournament_menu_end(self):
-        # TODO : ajouter controle
+        # TODO : vérifier controle
         command = self.view.tournament_menu_end()
         tournament = Tournament.find_by_id(command.choice)
         tournament.change_status(TournamentStatus.TERMINATED)
@@ -280,16 +279,18 @@ class RoundController():
         self.view = RoundView()
         self.round_service = RoundService()
 
-    def create_round(self, tournament: Tournament) -> Round:
+    def create_round(self, tournament: Tournament) -> ChessRound:
+        """Create a round of Tournament"""
         tournament.current_round_number += 1
         chess_round = ChessRound(id=tournament.current_round_number,
-                            round_name=f"Tour {tournament.current_round_number}",
-                            )
+                                 round_name=f"Tour {tournament.current_round_number}",
+                                 )
         # ajout date et heure de début du nouveau round
-        chess_round.set_start_date()
+        chess_round.start_date
         return chess_round
 
     def create_first_round(self, tournament: Tournament):
+        """Create the first round of a tournament"""
         # on génère un tour
         chess_round = self.create_round(tournament)
         # création des matchs
@@ -299,6 +300,7 @@ class RoundController():
         self.tournament_add_round(tournament, chess_round)
 
     def create_next_round(self):
+        """End a round and start a new one"""
         command = self.view.create_round_menu()
         tournament = Tournament.find_by_id(command.choice)
         # on termine le round précédent
@@ -312,34 +314,35 @@ class RoundController():
         self.tournament_add_round(tournament, chess_round)
         return tournament
 
-    def tournament_add_round(self, tournament: Tournament, chess_round: Round):
+    def tournament_add_round(self, tournament: Tournament, chess_round: ChessRound):
         tournament.rounds_list.append(chess_round)
         print(f"Le {chess_round.round_name} a bien été ajouté")
-        # TODO maj tournoi json
+        # TODO maj tournoi json à ce niveau (fait mais un peu plus loin)
         logging.info("Ajout du {} au tournoi [{}]".format(chess_round.round_name, tournament))
 
-
     def end_round(self, tournament: Tournament):
+        """Complete a Round"""
         # ajout heure de fin du round
-        chess_round = tournament.get_current_round()
-        # TODO ajouter round_update(*args)
-        chess_round.set_end_date()
-        print(f"fin du {chess_round.get_round_name()}")
-        logging.info(f"fin du {chess_round.get_round_name()} du tournoi {tournament}")
+        chess_round = tournament.current_round()
+        # ajoute la date de fin TODO : déplacer now du model vers le controller
+        chess_round.end_date
+        print(f"fin du {chess_round.round_name}")
+        logging.info(f"fin du {chess_round.round_name} du tournoi {tournament}")
         tournament.sort_players_by_score()
 
     def create_matchs(self, tournament: Tournament):
+        """Generate matchs (associate players)"""
         matchs_list = self.round_service.create_matchs(tournament)
         return matchs_list
 
     def add_scores(self):
+        """Add scores to the current Round"""
         # TODO : gérer l'erreur si on souhaite ajouter les scores sans avoir commencé le tournoi
-        # command qui retourne l'ID du tournoi
         command = self.view.round_menu_current_round()
         tournament = Tournament.find_by_id(command.choice)
         print("Ajout du score pour le tournoi {} // Tour : {} sur {}".format(tournament,
-                                                                             tournament.get_current_round_number(),
-                                                                             tournament.get_number_of_rounds(),
+                                                                             tournament.current_round_number,
+                                                                             tournament.number_of_rounds,
                                                                              ))
         self.round_service.add_scores_to_tournament(tournament, self.view.round_menu_add_scores)
         return tournament
@@ -370,7 +373,7 @@ class ReportController():
             self.main.main_menu()
 
     def report_all_players(self):
-        # liste de tous les joueurs par ordre alphabétique
+        """Show players list in alphabetical order"""
         player_list = Player.get_players_repertory()
         player_list_sorted = ReportService.sort_players_list_by_name(player_list)
         pprint(player_list_sorted, indent=4)
@@ -379,11 +382,12 @@ class ReportController():
         #     print(player.encode())
 
     def report_all_tournaments(self):
-        # liste de tous les tournois
-        pprint(Tournament.get_tournaments_repertory(), indent=4)
+        """Show tournaments list"""
+        pprint(Tournament.tournaments_repertory, indent=4)
         self.report_menu()
 
     def report_tournament_details(self):
+        """Show details of one tournament"""
         command = self.view.report_tournament_details()
         tournament = Tournament.find_by_id(command.choice)
         tournament_dict = ReportService.tournament_details(tournament)

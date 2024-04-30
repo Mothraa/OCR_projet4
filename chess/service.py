@@ -6,16 +6,17 @@ from datetime import date, datetime, timedelta
 from faker import Faker
 
 from chess.utils import TournamentStatus
-from chess.model import Player, Tournament, Round
-from chess.utils import TournamentStatus
+from chess.model import Player, Tournament, ChessRound
 
 
 class Generator:
+    """initialisation of faker"""
     def __init__(self) -> None:
         self.fake = Faker(locale="fr_FR")
 
 
 class GeneratePlayerService(Generator):
+    """generate fake Player's data with module faker"""
     # TODO : passer par des dataclass ? https://docs.python.org/fr/3/tutorial/classes.html
     def __init__(self) -> None:
         super().__init__()
@@ -39,6 +40,7 @@ class GeneratePlayerService(Generator):
 
 
 class GenerateTournamentService(Generator):
+    """generate fake Tournament's data with module faker"""
     def __init__(self) -> None:
         super().__init__()
 
@@ -73,9 +75,9 @@ class RoundService:
         pass
 
     def create_matchs(self, tournament: Tournament):
-        round_number = tournament.get_current_round_number()
+        round_number = tournament.current_round_number
         tournament.sort_players_by_score()
-        temp_round_list = tournament.get_player_score_list().copy()
+        temp_round_list = tournament.player_score_list.copy()
         # remise à 0 des scores pour le nouveau round
         for i, (_, _) in enumerate(temp_round_list):
             player = temp_round_list[i][0]
@@ -111,7 +113,7 @@ class RoundService:
     def already_played_with_in_tournament(self, player1_id, player2_id, tournament) -> bool:
         """return True if already played with another player"""
         player1 = Player.find_by_id(player1_id)
-        matchs_list = player1.get_matchs_history_by_tournament(tournament)
+        matchs_list = player1.matchs_history_by_tournament(tournament)
         for chess_match in matchs_list:
             if chess_match[2] == player2_id:
                 return True
@@ -119,7 +121,7 @@ class RoundService:
 
     @staticmethod
     def add_score_in_tournament_ranking(tournament: Tournament, score_to_add: float, player_id: int):
-        player_list = tournament.get_player_score_list()
+        player_list = tournament.player_score_list
         player_index = None
         for index, (p_id, _) in enumerate(player_list):
             if p_id == player_id:
@@ -127,15 +129,16 @@ class RoundService:
                 break
         (_, score) = player_list[player_index]
         new_score = score + score_to_add
-        tournament.player_list[player_index] = (player_id, new_score)
+        tournament.player_score_list[player_index] = (player_id, new_score)
 
         # TODO : déplacer le set_player_list dans le controller une fois tous les scores modifiés pour limiter les maj
-        tournament.set_player_score_list(player_list)
+        # update player score list
+        tournament.player_score_list = player_list
 
     @classmethod
     def add_scores_to_tournament(cls, tournament, view):
         # on récupère le tour courant (contenant la liste des matchs)
-        current_round = tournament.get_current_round()
+        current_round = tournament.current_round()
         new_matchs_list = []
         for chess_match in current_round.matchs_list:
             (player1_id, _), (player2_id, _) = chess_match
@@ -166,7 +169,8 @@ class ReportService():
     def tournament_details(tournament: Tournament):
         tournament_dict = TournamentService.convert_tournament_to_dict(tournament)
         # Converti la liste de joueurs du tournoi en une liste d'instances Player
-        tournament_player_instances = [Player.find_by_id(player_id) for player_id, _ in tournament_dict['player_list']]
+        tournament_player_instances = [Player.find_by_id(player_id)
+                                       for player_id, _ in tournament_dict['player_score_list']]
         # Trier les instances de joueur par nom
         player_list_sorted = ReportService.sort_players_list_by_name(tournament_player_instances)
         # Créer un dictionnaire pour mapper les ID de joueur à leurs noms
@@ -174,10 +178,12 @@ class ReportService():
         # Mise à jour des noms des joueurs dans tournament_dict
         for i, player in enumerate(player_list_sorted):
             player_name = f"{player.first_name} {player.last_name}"
-            tournament_dict['player_list'][i] = [player_name, f"score: {tournament_dict['player_list'][i][1]}"]
+            tournament_dict['player_score_list'][i] = [player_name,
+                                                       f"score: {tournament_dict['player_score_list'][i][1]}"]
         # Remplace l'ID par les noms des joueurs pour chaque match
         for tournament_round in tournament_dict['rounds_list']:
-            for i, chess_match in enumerate(tournament_round['matchs_list']):
+            updated_matchs_list = []  # Liste pour stocker les matchs mis à jour pour ce tournoi
+            for chess_match in tournament_round['matchs_list']:
                 player1_id, score_player1 = chess_match[0]
                 player2_id, score_player2 = chess_match[1]
                 player1_name = player_names.get(player1_id)
@@ -185,11 +191,10 @@ class ReportService():
                 updated_chess_match = [
                     (player1_name, score_player1),
                     (player2_name, score_player2)
-                    ]
-                # Mise à jour du match
-                tournament_round['matchs_list'][i] = updated_chess_match
+                ]
+                updated_matchs_list.append(updated_chess_match)
+            tournament_round['matchs_list'] = updated_matchs_list
         return tournament_dict
-
 
 class JsonService():
 
@@ -198,8 +203,15 @@ class JsonService():
     def __init__(self):
         pass
 
+    def load_app_data(self):
+        print("**** chargement des données depuis les fichiers json ****")
+        players = PlayerService.load_players_from_json()
+        print("Chargement de {} joueurs".format(len(players)))
+        tournaments = TournamentService.load_tournaments_from_json()
+        print("Chargement de {} tournois".format(len(tournaments)))
+
     def create_json_file(self, json_file_path):
-        """Crée un fichier JSON vide si il n'existe pas"""
+        """Create a void JSON file if not exist"""
         # TODO : a passer en statique ?
         if not os.path.exists(json_file_path):
             with open(json_file_path, "w") as f:
@@ -207,8 +219,9 @@ class JsonService():
 
     @staticmethod
     def convert_attr_to_str(obj):
+        """Convert attributs/objects into string for JSON serialisation"""
         if isinstance(obj, datetime):
-            # retourne la date au format '%Y-%m-%dT%H:%M:%S' (sans les millisecondes)
+            # return date format : '%Y-%m-%dT%H:%M:%S' (without millisecondes)
             return obj.isoformat(timespec="seconds")
         elif isinstance(obj, date):
             return obj.isoformat()
@@ -219,21 +232,16 @@ class JsonService():
 
     @staticmethod
     def load_data_from_file(json_file_path):
+        """load JSON data from file"""
         with open(json_file_path, "r") as f:
             data = json.load(f)
             return data
 
     @staticmethod
     def save_data_to_file(data, json_file_path):
+        """save serialised JSON data into file"""
         with open(json_file_path, "w") as f:
             json.dump(data, f, ensure_ascii=False, indent=JsonService.JSON_INDENT)
-
-    def load_app_data(self):
-        print("**** chargement des données depuis les fichiers json ****")
-        players = PlayerService.load_players_from_json()
-        print("Chargement de {} joueurs".format(len(players)))
-        tournaments = TournamentService.load_tournaments_from_json()
-        print("Chargement de {} tournois".format(len(tournaments)))
 
 
 class PlayerService:
@@ -243,7 +251,8 @@ class PlayerService:
         PlayerService.PLAYERS_FILE_PATH = players_file_path
 
     @classmethod
-    def player_exists(cls, data, player_dict):
+    def player_exists(cls, data, player_dict) -> bool:
+        """True if the player already exist in datas"""
         for item in data:
             if item['id'] == player_dict['id']:
                 print("Un joueur avec le même ID existe déjà.")
@@ -251,7 +260,29 @@ class PlayerService:
         return False
 
     @classmethod
+    def convert_player_to_dict(cls, obj):
+        """Convert object Player to dict recursively (imbricated lists)"""
+        if isinstance(obj, Player):
+            return {key: cls.convert_player_to_dict(value) for key, value in obj.to_json().items()}
+        elif isinstance(obj, list):
+            return [cls.convert_player_to_dict(item) for item in obj]
+        else:
+            return JsonService.convert_attr_to_str(obj)
+
+    # @classmethod
+    # def convert_player_to_dict(cls, obj):
+    #     """Convert object Player to dict recursively (imbricated lists)"""
+    #     if isinstance(obj, Player):
+    #         return {key: JsonService.convert_attr_to_str(value) for key, value in obj.__dict__.items()
+    #                 if key != "_players_repertory"}
+    #     elif isinstance(obj, list):
+    #         return [cls.convert_player_to_dict(item) for item in obj]
+    #     else:
+    #         return obj
+
+    @classmethod
     def add_player_as_json(cls, player: Player):
+        """add a Player in the JSON file"""
         player_dict = cls.convert_player_to_dict(player)
         data = JsonService.load_data_from_file(cls.PLAYERS_FILE_PATH)
         # Vérifier si les données à ajouter sont déjà présentes dans le fichier json
@@ -261,7 +292,8 @@ class PlayerService:
 
     @classmethod
     def update_player_as_json(cls, player: Player):
-        # TODO reprendre add_player_as_json et update_player_as_json
+        """update an existing Player in the JSON file"""
+        # TODO reprendre add_player_as_json et update_player_as_json pour optimiser le code
         player_dict = cls.convert_player_to_dict(player)
         data = JsonService.load_data_from_file(cls.PLAYERS_FILE_PATH)
         # mise à jour des données du joueur
@@ -275,6 +307,7 @@ class PlayerService:
 
     @classmethod
     def load_players_from_json(cls):
+        """instantiation of Players from JSON data"""
         data = JsonService.load_data_from_file(cls.PLAYERS_FILE_PATH)
         players = []
         for player_data in data:
@@ -286,21 +319,21 @@ class PlayerService:
             players.append(player)
         return players
 
-
-    @classmethod
-    def convert_player_to_dict(cls, obj):
-        """Conversion de l'objet Player en dictionnaire récursivement pour les listes imbriquées"""
-        if isinstance(obj, Player):
-            return {key: JsonService.convert_attr_to_str(value) for key, value in obj.__dict__.items()
-                    if key != "players_repertory"}
-        elif isinstance(obj, list):
-            return [cls.convert_player_to_dict(item) for item in obj]
-        else:
-            return obj
+    # @classmethod
+    # def convert_player_to_dict(cls, obj):
+    #     """Convert object Player to dict recursively (imbricated lists)"""
+    #     if isinstance(obj, Player):
+    #         return {key: JsonService.convert_attr_to_str(value) for key, value in obj.__dict__.items()
+    #                 if key != "_players_repertory"}
+    #     elif isinstance(obj, list):
+    #         return [cls.convert_player_to_dict(item) for item in obj]
+    #     else:
+    #         return obj
 
     @staticmethod
-    def set_history(player: Player, tournament: Tournament, round: Round, match):
-        (player1_id, score1), (player2_id, score2) = match
+    def set_history(player: Player, tournament: Tournament, round: ChessRound, chess_match):
+        """Save a match in the player's match history"""
+        (player1_id, score1), (player2_id, score2) = chess_match
         # on détermine si le joueur (player_id) est le player1 ou le player2
         player_id = player.id
         opponent_id = player2_id if player1_id is player_id else player1_id
@@ -308,13 +341,16 @@ class PlayerService:
         score_opponent = score2 if player1_id is player_id else score1
 
         # format : liste de tuples => (ID tournoi, round, ID adversaire, score_joueur, score_adversaire)
-        # TODO a passer en dict ?
-        player.set_match_history(tournament_id=tournament.id,
-                                 round_id=round.id,
-                                 opponent_id=opponent_id,
-                                 score_player=score_player,
-                                 score_opponent=score_opponent,
-                                 )
+        match_info = {
+            "tournament_id": tournament.id,
+            "round_id": round.id,
+            "opponent_id": opponent_id,
+            "score_player": score_player,
+            "score_opponent": score_opponent
+        }
+
+        player.set_match_history(**match_info)
+
 
 
 class TournamentService:
@@ -324,7 +360,8 @@ class TournamentService:
         TournamentService.TOURNAMENTS_FILE_PATH = tournaments_file_path
 
     @classmethod
-    def tournament_exists(cls, data, tournament_dict):
+    def tournament_exists(cls, data, tournament_dict) -> bool:
+        """True if the tournament already exist in datas"""
         for item in data:
             if item["id"] == tournament_dict["id"]:
                 print("Un tournoi avec le même ID existe déjà.")
@@ -333,6 +370,7 @@ class TournamentService:
 
     @classmethod
     def add_tournament_as_json(cls, tournament: Tournament):
+        """add a Tournament in the JSON file"""
         tournament_dict = cls.convert_tournament_to_dict(tournament)
         data = JsonService.load_data_from_file(cls.TOURNAMENTS_FILE_PATH)
         # On vérifie si les données à ajouter sont déjà présentes dans le fichier json
@@ -343,6 +381,7 @@ class TournamentService:
 
     @classmethod
     def update_tournament_as_json(cls, tournament_to_update):
+        """update an existing tournament in the JSON file"""
         tournament_dict = cls.convert_tournament_to_dict(tournament_to_update)
         data = JsonService.load_data_from_file(cls.TOURNAMENTS_FILE_PATH)
         # mise à jour des données du joueur
@@ -356,6 +395,7 @@ class TournamentService:
 
     @classmethod
     def load_tournaments_from_json(cls):
+        """instantiation of Tournaments from JSON data"""
         data = JsonService.load_data_from_file(cls.TOURNAMENTS_FILE_PATH)
         tournaments = []
         for tournament_data in data:
@@ -364,35 +404,33 @@ class TournamentService:
                 tournament_data["start_date"] = datetime.strptime(tournament_data["start_date"], '%Y-%m-%d').date()
             elif "end_date" in tournament_data:
                 tournament_data["end_date"] = datetime.strptime(tournament_data["end_date"], '%Y-%m-%d').date()
-
             round_list = []
+            # load Rounds and convert str to date
             if "rounds_list" in tournament_data:
                 for round_data in tournament_data["rounds_list"]:
                     if "start_date" in tournament_data:
                         round_data["start_date"] = datetime.strptime(round_data["start_date"], '%Y-%m-%dT%H:%M:%S')
                     elif "end_date" in tournament_data:
                         round_data["end_date"] = datetime.strptime(round_data["end_date"], '%Y-%m-%dT%H:%M:%S')
-                    round_list.append(Round(**round_data))
+                    round_list.append(ChessRound(**round_data))
             tournament_data["rounds_list"] = round_list
-
-            # Chargement du statut en tant qu'enum
+            # load status as enum
             if "status" in tournament_data:
-                # Mapping du statut avec l'énumération
+                # enum mapping
                 status_enum = TournamentStatus[tournament_data["status"]]
                 tournament_data["status"] = status_enum
-
-            # instanciation du tournoi
+            # tournament instantiation
             tournament = Tournament(**tournament_data)
-            # ajout a la liste des tournois
+            # add to the tournaments list
             tournaments.append(tournament)
         return tournaments
 
-    # Conversion de Tournament en dictionnaire (récursif pour traiter les listes imbriquées)
     @classmethod
     def convert_tournament_to_dict(cls, obj):
+        """Convert object Tournament to dict recursively (imbricated lists)"""
         if isinstance(obj, Tournament):
-            tournament_dict = {key: JsonService.convert_attr_to_str(value) for key, value in obj.__dict__.items()
-                               if key != "tournaments_repertory"}
+            tournament_dict = {key: cls.convert_tournament_to_dict(value)
+                               for key, value in obj.to_json().items()}
             # Conversion de la liste de rounds en dictionnaire
             if obj.rounds_list:
                 tournament_dict['rounds_list'] = [
@@ -400,12 +438,23 @@ class TournamentService:
                     for round_item in obj.rounds_list
                     ]
             return tournament_dict
-        elif isinstance(obj, Round):
-            round_dict = {key: JsonService.convert_attr_to_str(value) for key, value in obj.__dict__.items()}
+        elif isinstance(obj, ChessRound):
+            round_dict = {key: cls.convert_tournament_to_dict(value)
+                          for key, value in obj.to_json().items()}
             return round_dict
         # elif isinstance(obj, Player):
         #     return obj.id
         elif isinstance(obj, list):
             return [cls.convert_tournament_to_dict(item) for item in obj]
         else:
-            return obj
+            return JsonService.convert_attr_to_str(obj)
+
+    @classmethod
+    def convert_player_to_dict(cls, obj):
+        """Convert object Player to dict recursively (imbricated lists)"""
+        if isinstance(obj, Player):
+            return {key: cls.convert_player_to_dict(value) for key, value in obj.to_json().items()}
+        elif isinstance(obj, list):
+            return [cls.convert_player_to_dict(item) for item in obj]
+        else:
+            return JsonService.convert_attr_to_str(obj)
