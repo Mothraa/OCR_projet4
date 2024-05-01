@@ -331,10 +331,10 @@ class ReportMenuCommand:
             raise ValueError("Merci d'indiquer un choix")
         try:
             choice_int = int(self.choice)
-            if not (1 <= choice_int <= self.NB_CHOICES_MAX):
-                raise ValueError(f"Merci d'indiquer un nombre entre 1 et {self.NB_CHOICES_MAX}")
+            if not (1 <= choice_int <= self.NB_CHOIX_MAX):
+                raise ValueError(f"Merci d'indiquer un nombre entre 1 et {self.NB_CHOIX_MAX}")
         except ValueError:
-            raise ValueError(f"Merci d'indiquer un nombre entre 1 et {self.NB_CHOICES_MAX}")
+            raise ValueError(f"Merci d'indiquer un nombre entre 1 et {self.NB_CHOIX_MAX}")
 
     def clean_up(self):
         self.choice = int(self.choice)

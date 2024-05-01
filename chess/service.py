@@ -104,7 +104,6 @@ class RoundService:
                     # on regarde si le player1 a déjà joué avec le player2, si oui on passe au suivant
                     # TODO : précision sur le cahier des charges, se limiter aux joueurs ayant le même score ?
                     player2 = temp_round_list[i]
-
                     if self.already_played_with_in_tournament(player1[0], player2[0], tournament):
                         i += 1
                     else:

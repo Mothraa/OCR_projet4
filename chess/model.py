@@ -1,6 +1,5 @@
 from operator import itemgetter
 
-
 from chess.utils import TournamentStatus
 from chess.exceptions import TournamentAlreadyAddedError
 
@@ -29,16 +28,15 @@ class Tournament:
 
     def __init__(self, **kwargs):
         # TODO appeler les setters
-        # Génère un ID si aucun n'est spécifié
-        self._id = kwargs.get('id', self.__create_id())
-        self._name = kwargs.get("name", "")
-        self._location = kwargs.get("location", "")
-        self._status = kwargs.get("status", TournamentStatus.CREATED)
-        self._start_date = kwargs.get("start_date", "")
-        self._end_date = kwargs.get("end_date", "")
-        self._description = kwargs.get("description", "")
-        self._number_of_rounds = kwargs.get("number_of_rounds", 0)
-        self._current_round_number = kwargs.get("current_round_number", 0)
+        self.id = kwargs.get('id')
+        self.name = kwargs.get("name")
+        self.location = kwargs.get("location")
+        self.status = kwargs.get("status", TournamentStatus.CREATED)
+        self.start_date = kwargs.get("start_date")
+        self.end_date = kwargs.get("end_date")
+        self.description = kwargs.get("description")
+        self.number_of_rounds = kwargs.get("number_of_rounds", 4)
+        self.current_round_number = kwargs.get("current_round_number", 0)
         self._rounds_list = kwargs.get("rounds_list", [])
         self._player_score_list = kwargs.get("player_score_list", [])
         # ajoute le tournoi au répertoire de tous les tournois
@@ -52,17 +50,61 @@ class Tournament:
     def id(self) -> int:
         return self._id
 
+    @id.setter
+    def id(self, new_id):
+        # Génère un ID si aucun n'est spécifié
+        if not new_id:
+            self._id = self.__create_id()
+        else:
+            self._id = new_id
+
     @property
     def name(self) -> str:
         return self._name
+
+    @name.setter
+    def name(self, new_name):
+        self._name = new_name
+
+    @property
+    def location(self) -> str:
+        return self._location
+
+    @location.setter
+    def location(self, new_location):
+        self._location = new_location
 
     @property
     def status(self) -> TournamentStatus:
         return self._status
 
     @status.setter
-    def status(self, new_status):
-        self._status = new_status
+    def status(self, new_status: TournamentStatus):
+        self.change_status(new_status)
+
+    @property
+    def start_date(self):
+        return self._start_date
+
+    @start_date.setter
+    def start_date(self, new_start_date):
+        self._start_date = new_start_date
+
+    @property
+    def end_date(self):
+        return self._end_date
+
+    @end_date.setter
+    def end_date(self, new_end_date):
+        self._end_date = new_end_date
+
+    @property
+    def description(self):
+        return self._description
+
+    @description.setter
+    def description(self, new_description):
+        self._description = new_description
 
     @property
     def player_score_list(self):
@@ -71,14 +113,6 @@ class Tournament:
     @player_score_list.setter
     def player_score_list(self, new_player_score_list):
         self._player_score_list = new_player_score_list
-
-    @property
-    def current_round_number(self):
-        return self._current_round_number
-
-    @current_round_number.setter
-    def current_round_number(self, number):
-        self._current_round_number = number
 
     def current_round(self):
         round_indice = self.current_round_number - 1
@@ -89,9 +123,26 @@ class Tournament:
     def rounds_list(self) -> list:
         return self._rounds_list
 
+    # TODO tester le setter
+    # @rounds_list.setter
+    # def rounds_list(self, new_round):
+    #     self._rounds_list.append(new_round)
+
     @property
     def number_of_rounds(self):
         return self._number_of_rounds
+
+    @number_of_rounds.setter
+    def number_of_rounds(self, new_number_of_rounds):
+        self._number_of_rounds = new_number_of_rounds
+
+    @property
+    def current_round_number(self):
+        return self._current_round_number
+
+    @current_round_number.setter
+    def current_round_number(self, new_current_round_number):
+        self._current_round_number = new_current_round_number
 
     @classproperty
     def tournaments_repertory(cls):
@@ -103,14 +154,16 @@ class Tournament:
         self.player_score_list.append((player.id, INIT_SCORE))
 
     def change_status(self, new_status: TournamentStatus):
-        # TODO exceptions a reprendre
+        if not new_status:
+            raise ValueError("indiquer une nouvelle valeur de statut")
         actual_status = self.status
+        # TODO exceptions a reprendre
         if actual_status == TournamentStatus.TERMINATED:
             raise PermissionError("on ne peut modifier le statut d'un tournoi terminé")
         elif actual_status == TournamentStatus.IN_PROGRESS and new_status == TournamentStatus.CREATED:
             raise PermissionError("on ne peut repasser CREATED, un tournoi IN PROGRESS")
         else:
-            self.status = new_status
+            self._status = new_status
 
     def sort_players_by_score(self):
         """Sort the list of players by score in descending order"""
@@ -198,12 +251,12 @@ class ChessRound:
     @property
     def end_date(self):
         """Get the end date of the round"""
-        return self.end_date
+        return self._end_date
 
     @end_date.setter
     def end_date(self, value=None):
         """Set the end date of the round"""
-        self.end_date = value
+        self._end_date = value
 
     def to_json(self):
         return {
