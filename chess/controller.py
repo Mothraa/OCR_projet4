@@ -34,7 +34,6 @@ class MainController():
     tournament_service = None
 
     def __init__(self) -> None:
-        # logging a passer en singleton pour pouvoir l'appeler partout ?
         logging.basicConfig(level=logging.DEBUG,
                             filename="chess.log",
                             filemode="a",  # "a",
@@ -129,7 +128,6 @@ class PlayerController():
     def player_create_menu(self):
         command = self.view.player_create_menu()
         PlayerCreateValidate.validate(command.national_chess_id, command.birthdate)
-        # TODO : to_dict possible ? ou garder l'instance command jusqu'a l'instanciation de Player ?
         self.player_create(command.to_dict())
         self.player_menu()
 
@@ -143,7 +141,6 @@ class PlayerController():
     def player_create(self, command):
         player = Player(**command)
         self.player_service.add_player_as_json(player)
-        # TODO print et logging a passer avec un décorateur
         print("création du joueur >> " + str(player))
         logging.info("création du joueur >> " + str(player))
 
@@ -328,15 +325,14 @@ class RoundController():
     def tournament_add_round(self, tournament: Tournament, chess_round: ChessRound):
         tournament.rounds_list.append(chess_round)
         print(f"Le {chess_round.round_name} a bien été ajouté")
-        # TODO maj tournoi json à ce niveau (fait mais un peu plus loin)
         logging.info("Ajout du {} au tournoi [{}]".format(chess_round.round_name, tournament))
 
     def end_round(self, tournament: Tournament):
         """Complete a Round"""
         # ajout heure de fin du round
         chess_round = tournament.current_round()
-        # ajoute la date de fin TODO : déplacer now du model vers le controller
         chess_round.end_date = datetime.now()
+
         print(f"fin du {chess_round.round_name}")
         logging.info(f"fin du {chess_round.round_name} du tournoi {tournament}")
         tournament.sort_players_by_score()
@@ -355,7 +351,6 @@ class RoundController():
                                                                              tournament.current_round_number,
                                                                              tournament.number_of_rounds,
                                                                              ))
-        # TODO : a reprendre pour extraire l'appel a la vue et le controle du service
         self.round_service.add_scores_to_tournament(tournament, self.view.round_menu_add_scores)
         return tournament
 

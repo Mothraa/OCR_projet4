@@ -27,7 +27,6 @@ class Tournament:
     _tournaments_repertory = []
 
     def __init__(self, **kwargs):
-        # TODO appeler les setters
         self.id = kwargs.get('id')
         self.name = kwargs.get("name")
         self.location = kwargs.get("location")
@@ -150,14 +149,12 @@ class Tournament:
 
     def add_player_to_tournament(self, player):
         INIT_SCORE = 0.0
-        # TODO : on enregistre que l'id du joueur plutot que l'instance pour régler un pb de serialisation json
         self.player_score_list.append((player.id, INIT_SCORE))
 
     def change_status(self, new_status: TournamentStatus):
         if not new_status:
             raise ValueError("indiquer une nouvelle valeur de statut")
         actual_status = self.status
-        # TODO exceptions a reprendre
         if actual_status == TournamentStatus.TERMINATED:
             raise PermissionError("on ne peut modifier le statut d'un tournoi terminé")
         elif actual_status == TournamentStatus.IN_PROGRESS and new_status == TournamentStatus.CREATED:
@@ -209,7 +206,6 @@ class ChessRound:
     _matchs_list = None
 
     def __init__(self, **kwargs):
-        # TODO appeler les setters
         self._id = kwargs.get("id")
         self._round_name = kwargs.get("round_name")
         self._start_date = kwargs.get("start_date")
@@ -279,7 +275,6 @@ class Player:
     _players_repertory = []
 
     def __init__(self, **kwargs):
-        # TODO appeler les setters
         self._id = kwargs.get("id", self.__create_id())  # Generate ID if not specified
         self._national_chess_id = kwargs.get("national_chess_id")
         self._first_name = kwargs.get("first_name")
@@ -369,7 +364,6 @@ class Player:
     def set_tournament_history(self, tournament: Tournament):
         """ Add a tournament in the player history"""
         if tournament.id in self.tournaments_history:
-            # TODO exception a tester (test unitaire)
             raise TournamentAlreadyAddedError(tournament.__repr__)
         self._tournaments_history.append(tournament.id)
 

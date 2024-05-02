@@ -1,5 +1,4 @@
 from chess.client import Client
-# from chess.json import JsonTest
 
 if __name__ == "__main__":
 

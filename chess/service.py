@@ -23,7 +23,6 @@ class Generator:
 
 class GeneratePlayerService(Generator):
     """generate fake Player's data with module faker"""
-    # TODO : passer par des dataclass ? https://docs.python.org/fr/3/tutorial/classes.html
     def __init__(self) -> None:
         super().__init__()
 
@@ -31,7 +30,6 @@ class GeneratePlayerService(Generator):
         first_name = self.fake.unique.first_name()
         last_name = self.fake.unique.last_name()
         # on transforme la date en datetime
-        # birthdate = datetime.combine(self.fake.unique.date_of_birth(minimum_age=6, maximum_age=99), datetime.time())
         birthdate = self.fake.unique.date_of_birth(minimum_age=6, maximum_age=99)
         national_chess_id = self.fake.unique.bothify(text="??%%%%%").upper()
 
@@ -89,7 +87,6 @@ class RoundService:
             player = temp_round_list[i][0]
             temp_round_list[i] = (player, self.INIT_SCORE)
         matchs_list = []
-
         while len(temp_round_list) >= 2:
             # au premier tour random sur les paires (player1, player2)
             if round_number == 1:
@@ -102,7 +99,6 @@ class RoundService:
                 # On évite de créer des matchs identiques
                 while len(temp_round_list) > 1:
                     # on regarde si le player1 a déjà joué avec le player2, si oui on passe au suivant
-                    # TODO : précision sur le cahier des charges, se limiter aux joueurs ayant le même score ?
                     player2 = temp_round_list[i]
                     if self.already_played_with_in_tournament(player1[0], player2[0], tournament):
                         i += 1
@@ -135,7 +131,6 @@ class RoundService:
         (_, score) = player_list[player_index]
         new_score = score + score_to_add
         tournament.player_score_list[player_index] = (player_id, new_score)
-        # TODO : déplacer le set_player_list dans le controller une fois tous les scores modifiés pour limiter les maj
         # update player score list
         tournament.player_score_list = player_list
 
@@ -148,7 +143,7 @@ class RoundService:
             (player1_id, _), (player2_id, _) = chess_match
             player1 = Player.find_by_id(player1_id)
             player2 = Player.find_by_id(player2_id)
-            # TODO regrouper player1, 2 dans match ?
+
             command = view(player1, player2, chess_match)
             (player1_id, score1), (player2_id, score2) = command.chess_match
             RoundAddScoreValidate.validate(score1, score2)
@@ -157,9 +152,7 @@ class RoundService:
             cls.add_score_in_tournament_ranking(tournament, score2, player2_id)
             PlayerService.set_history(player1, tournament, current_round, command.chess_match)
             PlayerService.set_history(player2, tournament, current_round, command.chess_match)
-            # TODO : update json player1 et player2
             new_matchs_list.append(command.chess_match)
-        # TODO : ajouter le score au classement du tournoi
         current_round.matchs_list = new_matchs_list
 
 
@@ -275,17 +268,6 @@ class PlayerService:
         else:
             return JsonService.convert_attr_to_str(obj)
 
-    # @classmethod
-    # def convert_player_to_dict(cls, obj):
-    #     """Convert object Player to dict recursively (imbricated lists)"""
-    #     if isinstance(obj, Player):
-    #         return {key: JsonService.convert_attr_to_str(value) for key, value in obj.__dict__.items()
-    #                 if key != "_players_repertory"}
-    #     elif isinstance(obj, list):
-    #         return [cls.convert_player_to_dict(item) for item in obj]
-    #     else:
-    #         return obj
-
     @classmethod
     def add_player_as_json(cls, player: Player):
         """add a Player in the JSON file"""
@@ -299,7 +281,6 @@ class PlayerService:
     @classmethod
     def update_player_as_json(cls, player: Player):
         """update an existing Player in the JSON file"""
-        # TODO reprendre add_player_as_json et update_player_as_json pour optimiser le code
         player_dict = cls.convert_player_to_dict(player)
         data = JsonService.load_data_from_file(cls.PLAYERS_FILE_PATH)
         # mise à jour des données du joueur
@@ -324,17 +305,6 @@ class PlayerService:
             player = Player(**player_data)
             players.append(player)
         return players
-
-    # @classmethod
-    # def convert_player_to_dict(cls, obj):
-    #     """Convert object Player to dict recursively (imbricated lists)"""
-    #     if isinstance(obj, Player):
-    #         return {key: JsonService.convert_attr_to_str(value) for key, value in obj.__dict__.items()
-    #                 if key != "_players_repertory"}
-    #     elif isinstance(obj, list):
-    #         return [cls.convert_player_to_dict(item) for item in obj]
-    #     else:
-    #         return obj
 
     @staticmethod
     def set_history(player: Player, tournament: Tournament, round: ChessRound, chess_match):
@@ -379,7 +349,6 @@ class TournamentService:
         tournament_dict = cls.convert_tournament_to_dict(tournament)
         data = JsonService.load_data_from_file(cls.TOURNAMENTS_FILE_PATH)
         # On vérifie si les données à ajouter sont déjà présentes dans le fichier json
-        # TODO : a reprendre avec l'update
         if not cls.tournament_exists(data, tournament_dict):
             data.append(tournament_dict)
             JsonService.save_data_to_file(data, cls.TOURNAMENTS_FILE_PATH)
@@ -475,14 +444,12 @@ class ValidateCommandService:
     @classmethod
     def validate_date_format(cls, date_value: date):
         """validate date format"""
-        # TODO : a améliorer, la conversion s'effectue dans la command
         if not isinstance(date_value, (date, datetime)):
             raise InvalidDateFormatError()
 
     @classmethod
     def validate_tournament_exists(self, tournament_id: int):
         """validate the ID refers to an existing tournament"""
-        # TODO : validation a suppr, exception ajoutée à find_by_id
         tournament = Tournament.find_by_id(tournament_id)
         if not tournament:
             raise ValueError("Merci d'indiquer un numéro de tournoi existant")
@@ -490,7 +457,6 @@ class ValidateCommandService:
     @classmethod
     def validate_player_exists(self, player_id: int):
         """validate the ID refers to an existing player"""
-        # TODO : validation a suppr, exception ajoutée à find_by_id
         player = Player.find_by_id(player_id)
         if not player:
             raise ValueError("Merci d'indiquer un numéro de tournoi existant")
