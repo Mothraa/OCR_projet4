@@ -57,15 +57,15 @@ avec l'aide de la librairie :
 ### Table des matières
 
 **Utilisation de l'application**
-  - [Création des joueurs](#players)
-  - [Création des tournois](#tournaments)
-  - [Affichage des rapports](#reports)
+  - [Création des joueurs](#création-des-joueurs)
+  - [Création des tournois](#création-des-tournois)
+  - [Affichage des rapports](#affichage-des-rapports)
 
 **Organisation du livrable**
-  - [fichier config.ini](#init)
-  - [fichier chess.log](#logger)
-  - [données JSON](#datastructure)
-  - [Rapport flake8](#flake8)
+  - [fichier config.ini](#fichier-configini)
+  - [fichier chess.log](#fichier-chesslog)
+  - [données JSON](#données-json)
+  - [Rapport flake8](#rapport-flake8)
 
 
 ### Utilisation de l'application
@@ -103,6 +103,9 @@ Les rapports sont accessibles depuis le menu principal > Rapports.
   - nom et dates du tournoi 
   - liste des joueurs du tournoi par ordre alphabétique
   - liste de tous les tours du tournoi et de tous les matchs du tour
+
+
+### Organisation du livrable
 
 #### fichier config.ini
 
