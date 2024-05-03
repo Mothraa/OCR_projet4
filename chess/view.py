@@ -109,14 +109,6 @@ class TournamentView(InputErrorHandler):
             "number_of_rounds": number_of_rounds,
             "description": description
         }
-
-        # command = TournamentCreateCommand(name=name,
-        #                                   location=location,
-        #                                   start_date=start_date,
-        #                                   end_date=end_date,
-        #                                   number_of_rounds=number_of_rounds,
-        #                                   description=description,
-        #                                   )
         return TournamentCreateCommand(**tournament_data)
 
     @InputErrorHandler.catch_input_errors

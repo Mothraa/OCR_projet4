@@ -272,7 +272,7 @@ class TournamentController():
         # on ajoute le joueur a la liste du tournoi
         tournament.add_player_to_tournament(player)
         # on ajoute également le tournoi à la liste de ceux joués par le joueur
-        player.set_tournament_history(tournament)
+        player.tournaments_history = tournament.id
         self.player_service.update_player_as_json(player)
         pprint("Ajout du joueur [{}] au tournoi [{}]".format(player, tournament.name), indent=4)
         logging.info("Ajout du joueur [{}] au tournoi [{}]".format(player, tournament))

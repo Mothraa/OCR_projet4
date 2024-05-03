@@ -270,7 +270,7 @@ class Player:
     _first_name = None
     _last_name = None
     _birthdate = None
-    _tournaments_history = []
+    # _tournaments_history = []
     _matchs_history = []
     _players_repertory = []
 
@@ -280,8 +280,9 @@ class Player:
         self._first_name = kwargs.get("first_name")
         self._last_name = kwargs.get("last_name")
         self._birthdate = kwargs.get("birthdate")
-        self._tournaments_history = kwargs.get("tournaments_history", [])
-        self._matchs_history = kwargs.get("matchs_history", [])
+        self._tournaments_history = []
+        self.tournaments_history = kwargs.get("tournaments_history", [])
+        self.matchs_history = kwargs.get("matchs_history", [])
         # ajoute le joueur au répertoire de tous les joueurs
         Player._players_repertory.append(self)
 
@@ -313,6 +314,20 @@ class Player:
     def tournaments_history(self) -> list:
         """History of played tournaments"""
         return self._tournaments_history
+
+    @tournaments_history.setter
+    def tournaments_history(self, tournaments_ids):
+        """Add a tournament ID or a list of tournaments IDs to the history of one player"""
+        if tournaments_ids in self.tournaments_history:
+            raise TournamentAlreadyAddedError(tournaments_ids)
+        elif isinstance(tournaments_ids, int):
+            # Si un seul identifiant
+            self._tournaments_history.append(tournaments_ids)
+        elif isinstance(tournaments_ids, list):
+            # Si une liste d'identifiants
+            self._tournaments_history.extend(tournaments_ids)
+        else:
+            raise ValueError("tournaments_ids doit être un entier ou une liste d'entiers")
 
     @property
     def matchs_history(self) -> list:
@@ -360,12 +375,6 @@ class Player:
             if player.id == player_id:
                 return player
         raise ValueError("Aucun joueur trouvé avec cet ID")
-
-    def set_tournament_history(self, tournament: Tournament):
-        """ Add a tournament in the player history"""
-        if tournament.id in self.tournaments_history:
-            raise TournamentAlreadyAddedError(tournament.__repr__)
-        self._tournaments_history.append(tournament.id)
 
     def to_json(self):
         return {
