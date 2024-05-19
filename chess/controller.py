@@ -301,8 +301,9 @@ class RoundController():
         # on génère un tour
         chess_round = self.create_round(tournament)
         # création des matchs
-        matchs_list = self.create_matchs(tournament)
-        chess_round.add_matchs(matchs_list)
+        matchs_list_to_add = self.create_matchs(tournament)
+        chess_round.matchs_list = matchs_list_to_add
+        # chess_round.add_matchs(matchs_list)
         # ajout du round a l'objet tournoi
         self.tournament_add_round(tournament, chess_round)
 
@@ -316,8 +317,9 @@ class RoundController():
         # puis on génère le nouveau tour
         chess_round = self.create_round(tournament)
         # création des matchs
-        matchs_list = self.create_matchs(tournament)
-        chess_round.add_matchs(matchs_list)
+        matchs_list_to_add = self.create_matchs(tournament)
+        chess_round.matchs_list = matchs_list_to_add
+        # chess_round.add_matchs(matchs_list)
         # ajout du round au tournoi
         self.tournament_add_round(tournament, chess_round)
         return tournament

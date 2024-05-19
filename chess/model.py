@@ -122,11 +122,6 @@ class Tournament:
     def rounds_list(self) -> list:
         return self._rounds_list
 
-    # TODO tester le setter
-    # @rounds_list.setter
-    # def rounds_list(self, new_round):
-    #     self._rounds_list.append(new_round)
-
     @property
     def number_of_rounds(self):
         return self._number_of_rounds
@@ -203,39 +198,33 @@ class ChessRound:
     _round_name = None
     _start_date = None
     _end_date = None
-    _matchs_list = None
+    _matchs_list = []
 
     def __init__(self, **kwargs):
-        self._id = kwargs.get("id")
-        self._round_name = kwargs.get("round_name")
-        self._start_date = kwargs.get("start_date")
-        self._end_date = kwargs.get("end_date")
-        self._matchs_list = kwargs.get("matchs_list", [])
-
-    def add_matchs(self, matchs_list_to_add):
-        """ format des matchs :
-        ([player1, score_player1], [player2, score_player2])
-        """
-        self._matchs_list.extend(matchs_list_to_add)
+        self.id = kwargs.get("id")
+        self.round_name = kwargs.get("round_name")
+        self.start_date = kwargs.get("start_date")
+        self.end_date = kwargs.get("end_date")
+        self.matchs_list = kwargs.get("matchs_list") if kwargs.get("matchs_list") is not None else []
 
     @property
     def id(self) -> int:
         return self._id
 
+    @id.setter
+    def id(self, new_id):
+        self._id = new_id
+
     @property
     def round_name(self) -> str:
         return self._round_name
 
-    @property
-    def matchs_list(self) -> list:
-        return self._matchs_list
-
-    @matchs_list.setter
-    def matchs_list(self, new_matchs_list: list):
-        self._matchs_list = new_matchs_list
+    @round_name.setter
+    def round_name(self, new_round_name):
+        self._round_name = new_round_name
 
     @property
-    def start_date(self):
+    def start_date(self) -> str:
         """Get the start date of the round"""
         return self._start_date
 
@@ -254,6 +243,17 @@ class ChessRound:
         """Set the end date of the round"""
         self._end_date = value
 
+    @property
+    def matchs_list(self) -> list:
+        return self._matchs_list
+
+    @matchs_list.setter
+    def matchs_list(self, new_matchs_list: list):
+        """add matchs to existing matches list"""
+        if not isinstance(new_matchs_list, list):
+            raise ValueError("new_matchs_list doit être une liste")
+        self._matchs_list.extend(new_matchs_list)
+
     def to_json(self):
         return {
                 "id": self._id,
@@ -270,16 +270,15 @@ class Player:
     _first_name = None
     _last_name = None
     _birthdate = None
-    # _tournaments_history = []
     _matchs_history = []
     _players_repertory = []
 
     def __init__(self, **kwargs):
-        self._id = kwargs.get("id", self.__create_id())  # Generate ID if not specified
-        self._national_chess_id = kwargs.get("national_chess_id")
-        self._first_name = kwargs.get("first_name")
-        self._last_name = kwargs.get("last_name")
-        self._birthdate = kwargs.get("birthdate")
+        self.id = kwargs.get("id")
+        self.national_chess_id = kwargs.get("national_chess_id")
+        self.first_name = kwargs.get("first_name")
+        self.last_name = kwargs.get("last_name")
+        self.birthdate = kwargs.get("birthdate")
         self._tournaments_history = []
         self.tournaments_history = kwargs.get("tournaments_history", [])
         self.matchs_history = kwargs.get("matchs_history", [])
@@ -291,24 +290,52 @@ class Player:
         return _id
 
     @property
-    def id(self):
+    def id(self) -> int:
         return self._id
+
+    @id.setter
+    def id(self, new_id):
+        # Generate an ID if not specified
+        if not new_id:
+            self._id = self.__create_id()
+        else:
+            self._id = new_id
+
+    @property
+    def national_chess_id(self):
+        return self._national_chess_id
+
+    @national_chess_id.setter
+    def national_chess_id(self, new_national_chess_id):
+        self._national_chess_id = new_national_chess_id
 
     @property
     def first_name(self):
         return self._first_name
 
+    @first_name.setter
+    def first_name(self, new_first_name):
+        self._first_name = new_first_name
+
     @property
     def last_name(self):
         return self._last_name
 
+    @last_name.setter
+    def last_name(self, new_last_name):
+        self._last_name = new_last_name
+
+    @property
+    def birthdate(self):
+        return self._birthdate
+
+    @birthdate.setter
+    def birthdate(self, new_birthdate):
+        self._birthdate = new_birthdate
+
     @classproperty
     def players_repertory(cls):
         return cls._players_repertory
-
-    # @property
-    # def players_repertory(self) -> list:
-    #     return self._players_repertory
 
     @property
     def tournaments_history(self) -> list:
