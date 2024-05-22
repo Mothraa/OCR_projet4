@@ -491,6 +491,13 @@ class ValidateCommandService:
     def validate_last_round_reached(cls, tournament_id: int):
         """Check if we are in the last round"""
         tournament = Tournament.find_by_id(tournament_id)
+        if tournament.current_round_number == tournament.number_of_rounds:
+            raise ValueError("Tous les tours du tournoi ont été joués")
+
+    @classmethod
+    def validate_last_round_not_reached(cls, tournament_id: int):
+        """Check if we are in the last round"""
+        tournament = Tournament.find_by_id(tournament_id)
         if tournament.current_round_number != tournament.number_of_rounds:
             raise ValueError("Tous les tours du tournoi n'ont pas été joués")
 
@@ -587,18 +594,19 @@ class TournamentStartValidate:
         ValidateCommandService.validate_minimum_players(tournament_id)
 
 
-class TournamentEndValidate:
-    @staticmethod
-    def validate(tournament_id):
-        status = TournamentStatus.IN_PROGRESS
-        ValidateCommandService.validate_tournament_status(tournament_id, status)
-        ValidateCommandService.validate_last_round_reached(tournament_id)
-        ValidateCommandService.validate_round_matches(tournament_id, check_played=True)
-
-
 class CreateRoundValidate:
     @staticmethod
     def validate(tournament_id):
         status = TournamentStatus.IN_PROGRESS
         ValidateCommandService.validate_tournament_status(tournament_id, status)
+        ValidateCommandService.validate_round_matches(tournament_id, check_played=True)
+        ValidateCommandService.validate_last_round_reached(tournament_id)
+
+
+class TournamentEndValidate:
+    @staticmethod
+    def validate(tournament_id):
+        status = TournamentStatus.IN_PROGRESS
+        ValidateCommandService.validate_tournament_status(tournament_id, status)
+        ValidateCommandService.validate_last_round_not_reached(tournament_id)
         ValidateCommandService.validate_round_matches(tournament_id, check_played=True)
