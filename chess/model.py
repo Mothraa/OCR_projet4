@@ -252,7 +252,8 @@ class ChessRound:
         """add matchs to existing matches list"""
         if not isinstance(new_matchs_list, list):
             raise ValueError("new_matchs_list doit être une liste")
-        self._matchs_list.extend(new_matchs_list)
+        # self._matchs_list.extend(new_matchs_list)
+        self._matchs_list = new_matchs_list
 
     def to_json(self):
         return {
